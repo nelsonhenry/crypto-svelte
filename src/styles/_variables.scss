@@ -1,0 +1,46 @@
+:root {
+    --salmon: #e0a080;
+    --max-width: 800px;
+    --font-size: 16px;
+    --bg: #000;
+    --bg2: #101010;
+    --bg3: #202020;
+    --bd: #404040;
+    --bd2: #202020;
+    // --fg: #b0bec5;
+    --fg: #eeeeee;
+    --yellow: #ffe8a0;
+    --red: #dfa8f0;
+    --midred: #423045;
+    --darkred: #241a25;
+    --blue: #90caf9;
+    --midblue: #2a3b47;
+    --darkblue: #172026;
+    --green: #80cbc4;
+    --midgreen: #233b3a;
+    --darkgreen: #13201f;
+    --comment: #757575;
+    --yellow-trans: #ffe8a028;
+    --red-trans: #dfa8f028;
+    --blue-trans: #90caf928;
+    --green-trans: #80cbc428;
+    // light
+    // --bg: #fff;
+    // --bg2: #e0e0e0;
+    // --bd: #e0e0e0;
+    // --fg: #000000;
+    // --yellow: #ffe8a0;
+    // --red: #9b2889;
+    // --blue: #1565c0;
+    // --green: #00897b;
+    // --fg-trans: #00000020;
+    // --yellow-trans: #ffe8a030;
+    // --red-trans: #9b288930;
+    // --blue-trans: #1565c030;
+    // --green-trans: #00897b30;
+}
+
+@font-face {
+    font-family: "Recursive Variable";
+    src: url("../fonts/recursive.ttf") format(truetype);
+}
