@@ -13,7 +13,7 @@
     } from "../js/helpers";
 
     let baseUrl = "https://crypto-svelte.herokuapp.com",
-        //  baseUrl = "http://localhost:1337",
+        // baseUrl = "http://localhost:1337",
         isLogged = false,
         loginEmail,
         loginPw,
@@ -56,7 +56,6 @@
         };
 
     const login = async function () {
-        // alert(loginEmail, loginPw);
         await axios
             .post(`${baseUrl}/auth/local`, {
                 identifier: loginEmail,
@@ -81,7 +80,7 @@
                 },
             })
             .then((res) => {
-                console.log("1", res);
+                // console.log("1", res);
                 isLogged = true;
                 coins = res.data;
                 for (let coin of coins) {
@@ -104,7 +103,7 @@
                         )}`
                     )
                     .then((res) => {
-                        console.log("2", res);
+                        // console.log("2", res);
                         datas = res.data;
                         Object.entries(datas).forEach((el) => {
                             let data = el[1];
@@ -118,20 +117,21 @@
                         stats.gains.on = sumArray(stats.gains.onList);
                         stats.gains.off.q2 = sumArray(stats.gains.offList);
 
-                        axios
-                            .get(`${baseUrl}/funds`, {
-                                headers: {
-                                    Authorization: `Bearer ${loginToken}`,
-                                },
-                            })
-                            .then((res) => {
-                                let deposits = res.data.deposit;
-                                for (let deposit of deposits) {
-                                    stats.funds.offList.push(deposit.amount);
-                                }
-                                stats.funds.off =
-                                    sumArray(stats.funds.offList) * 1.16757; // eur -> usd
-                            });
+                        stats.funds.off = 18670;
+                        // axios
+                        //     .get(`${baseUrl}/funds`, {
+                        //         headers: {
+                        //             Authorization: `Bearer ${loginToken}`,
+                        //         },
+                        //     })
+                        //     .then((res) => {
+                        //         let deposits = res.data.deposit;
+                        //         for (let deposit of deposits) {
+                        //             stats.funds.offList.push(deposit.amount);
+                        //         }
+                        //         stats.funds.off =
+                        //             sumArray(stats.funds.offList) * 1.16757; // eur -> usd
+                        //     });
 
                         // end code
                         datasLoaded = true;
@@ -163,7 +163,7 @@
             });
     };
 
-    function setCoinProps(coin) {
+    const setCoinProps = function (coin) {
         // list
         stats.list.push(coin.name);
 
@@ -189,10 +189,11 @@
             stats.gains.offList.push(gain.amount);
         }
         coin.gains.off = sumProps(coin.gains, "amount");
-    }
+    };
 
-    function setCoinApiProps(coin, data) {
+    const setCoinApiProps = function (coin, data) {
         if (!coin.sold) {
+            coin.image = data.image;
             coin.currentPrice = data.current_price;
             coin.percentChange24h = data.price_change_percentage_24h;
             coin.percentChange = percentChange(
@@ -206,7 +207,7 @@
         coin.marketCapRank = data.market_cap_rank;
         coin.isEdited = false;
         coin.isAddingBuy = false;
-    }
+    };
 
     function computeGains(buysPrice, sellPrice, sellAmount) {
         return sellPrice * sellAmount - buysPrice * sellAmount;
@@ -338,9 +339,8 @@
     };
 
     const editCoin = async function (coin) {
-        let index = coins.indexOf(coin);
         let buysBody = [];
-        if (!coin.edit.sold) {
+        if (computeSold(coin.edit.buysAmount, coin.edit.sellAmount) === false) {
             buysBody = [
                 {
                     amount: coin.edit.buysAmount - coin.edit.sellAmount,
@@ -428,10 +428,10 @@
 <template>
     <!-- IS NOT LOGGED -->
     {#if !isLogged}
-        <div class="form">
+        <div class="form form--login">
             <div class="form__section">
                 <div class="form__row">
-                    <div class="form__col md">
+                    <div class="form__col">
                         <label for="login-email" class="form__label"
                             >Email</label
                         >
@@ -442,7 +442,7 @@
                             bind:value={loginEmail}
                         />
                     </div>
-                    <div class="form__col md">
+                    <div class="form__col">
                         <label for="login-pw" class="form__label"
                             >Password</label
                         >
@@ -454,7 +454,7 @@
                         />
                     </div>
                 </div>
-                <div class="form__row">
+                <div class="form__row form__row--no-border">
                     <div class="form__col">
                         <button
                             type="submit"
@@ -528,9 +528,9 @@
                         >
                     </div>
                     <div>
-                        {stats.funds.on.toFixed(
+                        {stats.funds.on.toFixed(0)}/{stats.funds.off.toFixed(
                             0
-                        )}&nbsp;/&nbsp;{stats.funds.off.toFixed(0)}&nbsp;({(
+                        )}&nbsp;({(
                             (stats.funds.on / stats.funds.off) *
                             100
                         ).toFixed(1)}%)
@@ -557,6 +557,7 @@
                 <!-- SORTS -->
                 <div class="sorts">
                     {#if !stops1}
+                        <!-- <div class="sort__col sort__image">&nbsp;</div> -->
                         <div
                             class="sort__col sort__rank sort"
                             data-sort="coin__rank"
@@ -623,6 +624,14 @@
                         {#if !coin.sold}
                             <div class="coin coin--{coin.symbol.toLowerCase()}">
                                 {#if !stops1}
+                                    <!-- <div class="coin__col coin__image">
+                                        {#if coin.image}
+                                            <img
+                                                src={coin.image}
+                                                alt="coin logo"
+                                            />
+                                        {/if}
+                                    </div> -->
                                     <div class="coin__col coin__rank">
                                         <span>
                                             {coin.marketCapRank !== null
@@ -808,10 +817,8 @@
                                                     <label
                                                         for=""
                                                         class="form__label"
-                                                        style="display: flex; justify-content:  space-between"
                                                     >
-                                                        <span>Buys amount</span>
-                                                        <span>*</span>
+                                                        Buys amount
                                                     </label>
                                                     <input
                                                         class="form__input"
@@ -824,10 +831,8 @@
                                                     <label
                                                         for=""
                                                         class="form__label"
-                                                        style="display: flex; justify-content:  space-between"
                                                     >
-                                                        <span>Buys price</span>
-                                                        <span> = </span>
+                                                        Buys price
                                                     </label>
                                                     <input
                                                         class="form__input"
@@ -839,8 +844,10 @@
                                                 <div class="form__col xs">
                                                     <label
                                                         class="form__label"
-                                                        for="">Buys value</label
+                                                        for=""
                                                     >
+                                                        Buys value
+                                                    </label>
                                                     <input
                                                         class="form__input"
                                                         type="text"
@@ -889,10 +896,8 @@
                                                     <label
                                                         for=""
                                                         class="form__label"
-                                                        style="display: flex; justify-content:  space-between"
                                                     >
-                                                        <span>Sell amount</span>
-                                                        <span>*</span>
+                                                        Sell amount
                                                     </label>
                                                     <input
                                                         class="form__input"
@@ -905,10 +910,8 @@
                                                     <label
                                                         for=""
                                                         class="form__label"
-                                                        style="display: flex; justify-content:  space-between"
                                                     >
-                                                        <span>Sell price</span>
-                                                        <span> = </span>
+                                                        Sell price
                                                     </label>
                                                     <input
                                                         class="form__input"
@@ -941,8 +944,9 @@
                                                     <label
                                                         for="coin-gain"
                                                         class="form__label"
-                                                        >Gain</label
                                                     >
+                                                        Gain
+                                                    </label>
                                                     <input
                                                         id="coin-gain"
                                                         class="form__input"
@@ -962,12 +966,8 @@
                                                     <label
                                                         for=""
                                                         class="form__label"
-                                                        style="display: flex; justify-content:  space-between"
                                                     >
-                                                        <span
-                                                            >Remaining amount</span
-                                                        >
-                                                        <span>*</span>
+                                                        Remaining amount
                                                     </label>
                                                     <input
                                                         class="form__input"
@@ -983,17 +983,9 @@
                                             </div>
                                             <!-- Submit or cancel -->
                                             <div
-                                                class="form__row form__row--btns"
+                                                class="form__row form__row--no-border"
                                             >
-                                                <div class="form__col xs">
-                                                    <button
-                                                        class="form__btn form__cancel"
-                                                        on:click={() =>
-                                                            (coin.isEdited = false)}
-                                                        >Cancel</button
-                                                    >
-                                                </div>
-                                                <div class="form__col xl">
+                                                <div class="form__col md">
                                                     <input
                                                         class="form__btn form__submit"
                                                         type="submit"
@@ -1002,6 +994,14 @@
                                                             coin
                                                         )}
                                                     />
+                                                </div>
+                                                <div class="form__col md">
+                                                    <button
+                                                        class="form__btn form__cancel"
+                                                        on:click={() =>
+                                                            (coin.isEdited = false)}
+                                                        >Cancel</button
+                                                    >
                                                 </div>
                                             </div>
                                         </div>
@@ -1085,8 +1085,10 @@
                                                 </div>
                                             </div>
                                             <!-- Submit -->
-                                            <div class="form__row">
-                                                <div class="form__col xs">
+                                            <div
+                                                class="form__row form__row--no-border"
+                                            >
+                                                <div class="form__col md">
                                                     <button
                                                         class="form__btn form__cancel"
                                                         on:click={() =>
@@ -1094,7 +1096,7 @@
                                                         >Cancel</button
                                                     >
                                                 </div>
-                                                <div class="form__col xl">
+                                                <div class="form__col md">
                                                     <input
                                                         class="form__btn form__submit"
                                                         type="submit"
@@ -1130,6 +1132,14 @@
                             />
                         </div>
                         <div class="form__col xs">
+                            <label for="" class="form__label">&nbsp;</label>
+                            <button
+                                class="form__btn"
+                                on:click={searchCoin(post.symbol)}
+                                >Search</button
+                            >
+                        </div>
+                        <div class="form__col md">
                             <label for="add-coin-name" class="form__label"
                                 >Name</label
                             >
@@ -1140,44 +1150,10 @@
                                 type="text"
                             />
                         </div>
-                        <div class="form__col xs">
-                            <label for="add-coin-amount" class="form__label"
-                                >Buy amount</label
-                            >
-                            <input
-                                bind:value={post.buyAmount}
-                                id="add-coin-amount"
-                                class="form__input"
-                                type="number"
-                            />
-                        </div>
-                        <div class="form__col xs">
-                            <label for="add-coin-price" class="form__label"
-                                >Buy price</label
-                            >
-                            <input
-                                bind:value={post.buyPrice}
-                                id="add-coin-price"
-                                class="form__input"
-                                type="number"
-                            />
-                        </div>
-                    </div>
-                    <div class="form__row">
-                        <div class="form__col xs">
-                            <label for="" class="form__label"
-                                >Search coin name</label
-                            >
-                            <button
-                                class="form__btn"
-                                on:click={searchCoin(post.symbol)}
-                                >Search</button
-                            >
-                        </div>
-                        <div class="form__col xl">
-                            <div class="form__label">Results</div>
-                            <div class="search-coins">
-                                {#if isSearchDatasLoaded}
+                        {#if isSearchDatasLoaded}
+                            <div class="form__col">
+                                <!-- <div class="form__label">Results</div> -->
+                                <div class="search-coins">
                                     {#each searchCoins as coin}
                                         <div class="search-coin">
                                             <div
@@ -1211,32 +1187,55 @@
                                             </div>
                                         </div>
                                     {/each}
-                                {:else if isSearchDatasLoaded === false}
-                                    <div class="loading">
-                                        Loading<span class="loading__dot"
-                                            >.</span
-                                        ><span class="loading__dot">.</span
-                                        ><span class="loading__dot">.</span>
-                                    </div>
-                                {/if}
+                                </div>
                             </div>
-                        </div>
+                        {:else if isSearchDatasLoaded === false}
+                            <div class="loading">
+                                Loading<span class="loading__dot">.</span><span
+                                    class="loading__dot">.</span
+                                ><span class="loading__dot">.</span>
+                            </div>
+                        {/if}
                     </div>
                     <div class="form__row">
                         <div class="form__col xs">
-                            <button
-                                class="form__btn form__cancel"
-                                on:click={() => (isAddingCoin = false)}
-                                >Cancel</button
+                            <label for="add-coin-amount" class="form__label"
+                                >Buy amount</label
                             >
+                            <input
+                                bind:value={post.buyAmount}
+                                id="add-coin-amount"
+                                class="form__input"
+                                type="number"
+                            />
                         </div>
-                        <div class="form__col xl">
+                        <div class="form__col xs">
+                            <label for="add-coin-price" class="form__label"
+                                >Buy price</label
+                            >
+                            <input
+                                bind:value={post.buyPrice}
+                                id="add-coin-price"
+                                class="form__input"
+                                type="number"
+                            />
+                        </div>
+                    </div>
+                    <div class="form__row form__row--no-border">
+                        <div class="form__col md">
                             <input
                                 class="form__btn form__submit"
                                 type="submit"
                                 value="submit"
                                 on:click={addCoin}
                             />
+                        </div>
+                        <div class="form__col md">
+                            <button
+                                class="form__btn form__cancel"
+                                on:click={() => (isAddingCoin = false)}
+                                >Cancel</button
+                            >
                         </div>
                     </div>
                 </div>
@@ -1246,6 +1245,18 @@
 </template>
 
 <style lang="scss">
+    @import "../styles/_include-media";
+
+    $breakpoints: (
+        xxs: 320px,
+        xs: 480px,
+        sm: 768px,
+        md: 1024px,
+        lg: 1280px,
+        xl: 1440px,
+        xxl: 1920px,
+    );
+
     .hidden {
         display: none !important;
     }
@@ -1257,20 +1268,33 @@
         width: 100%;
         height: 100vh;
         overflow-y: auto;
+        background: var(--bg);
+        display: flex;
+        justify-content: center;
+        align-items: center;
         &__section {
-            height: 100%;
-            background: var(--bg);
-            margin: 0 auto;
+            width: 100%;
             max-width: calc(var(--max-width) + 2rem);
             padding: 1rem;
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 1.5rem;
         }
         &__row {
+            background: var(--bg2);
+            padding: 1.5rem;
+            border-radius: 0.25rem;
+            border: 1px solid var(--bg3);
             display: grid;
             grid-template-columns: repeat(12, 1fr);
-            column-gap: 1rem;
+            gap: 1.5rem;
+
+            &--no-border {
+                padding: 0;
+                border-radius: 0;
+                background: none;
+                border: none;
+            }
 
             &-title {
                 grid-column: span 12;
@@ -1280,47 +1304,54 @@
         &__col {
             grid-column: span 12;
             &.xs {
-                grid-column: span 3;
+                grid-column: span 6;
+                @include media(">=md") {
+                    grid-column: span 3;
+                }
             }
             &.sm {
-                grid-column: span 4;
+                @include media(">=md") {
+                    grid-column: span 4;
+                }
             }
             &.md {
-                grid-column: span 6;
+                @include media(">=md") {
+                    grid-column: span 6;
+                }
             }
             &.lg {
-                grid-column: span 8;
+                @include media(">=md") {
+                    grid-column: span 8;
+                }
             }
             &.xl {
-                grid-column: span 9;
+                @include media(">=md") {
+                    grid-column: span 9;
+                }
             }
         }
         &__label {
-            display: inline-block;
-            font-size: 0.625rem;
+            display: block;
+            font-size: 0.75rem;
             text-transform: uppercase;
             color: var(--comment);
         }
         &__input {
             width: 100%;
             border-bottom: 1px solid var(--bd);
-            line-height: 1.5;
-            padding-bottom: 0.25rem;
+            // line-height: 1.5;
+            padding: 0.75rem 0;
             &:focus {
                 outline: none;
                 border-bottom: 1px solid var(--bd);
             }
-            // &[readonly] {
-            //     border-bottom-style: dashed;
-            // }
         }
         &__btn {
             cursor: pointer;
             width: 100%;
-            padding: 0.25rem 0.5rem;
+            padding: 0.75rem 1rem;
             border-radius: 0.25rem;
             border: 1px solid var(--bd);
-            font-size: 0.625rem;
             text-transform: uppercase;
             &:hover {
                 background: var(--bg3);
@@ -1331,11 +1362,16 @@
         }
     }
 
-    /* Customize the label (the container) */
+    .form--login .form__section {
+        max-width: calc(400px + 2rem);
+    }
+
     .checkbox {
         display: block;
         position: relative;
         margin-top: 1.5rem;
+        height: 2.25rem;
+        border-bottom: 1px solid var(--bd);
         cursor: pointer;
         user-select: none;
         &__label {
@@ -1353,31 +1389,33 @@
 
         &__mark {
             position: absolute;
-            top: 0;
+            bottom: 0;
             left: 0;
-            height: 1.75rem;
             width: 100%;
-            border-bottom: 1px solid var(--bd);
             &:after {
-                content: "no";
+                content: "No";
                 position: absolute;
                 left: 0;
-                top: 0;
+                bottom: 0;
+                padding: 0.75rem 0;
             }
         }
 
         &__input:checked ~ &__mark:after {
-            content: "yes";
+            content: "Yes";
         }
     }
 
     .header {
-        padding: 0.5rem;
+        padding: 1rem;
         position: fixed;
+        z-index: 10;
+        width: 100%;
+        left: 0;
         bottom: 0;
         display: flex;
         justify-content: center;
-        gap: 0.5rem;
+        gap: 1rem;
     }
 
     .main {
@@ -1387,12 +1425,13 @@
         padding: 0.5rem;
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
     }
 
     .sorts {
-        padding: 0 0.25rem;
-        list-style: none;
+        position: sticky;
+        top: 0;
+        background: var(--bg);
+        padding: 0.75rem 0.25rem;
         display: flex;
         gap: 0.5ch;
         @media (min-width: 640px) {
@@ -1406,47 +1445,12 @@
             flex: none;
             text-align: right;
             text-transform: uppercase;
-            span {
-                border-radius: 0.25rem;
-                margin-right: -0.25rem;
-                padding: 1px 0.25rem;
-            }
             &.asc,
             &.desc {
                 span {
                     background: var(--bg3);
                 }
             }
-        }
-
-        &__rank,
-        &__symbol {
-            text-align: left;
-            span {
-                margin-right: 0;
-                margin-left: -0.25rem;
-            }
-        }
-        &__rank {
-            flex: none;
-            min-width: 3ch;
-        }
-        &__gain,
-        &__bet {
-            flex: none;
-            min-width: 5ch;
-        }
-        &__symbol,
-        &__percent,
-        &__percent24h {
-            flex: none;
-            min-width: 6ch;
-        }
-        &__now,
-        &__old,
-        &__stop {
-            flex: 1;
-            min-width: 5ch;
         }
     }
 
@@ -1456,28 +1460,25 @@
         flex-direction: column;
         border-top: 1px dotted var(--bd);
         border-bottom: 1px dotted var(--bd);
-        .coin {
-            padding: 0 0.25rem;
-            display: flex;
-            border-top: 1px dotted var(--bd);
-            gap: 0.5ch;
-            order: 0 !important;
-            @media (min-width: 640px) {
-                gap: 1ch;
-            }
+    }
 
-            &__col {
-                flex: 1;
-                text-align: right;
-                &.hidden {
-                    display: none;
-                }
+    .coin {
+        padding: 4px 0.25rem;
+        display: flex;
+        border-top: 1px dotted var(--bd);
+        gap: 0.5ch;
+        order: 0 !important;
+        @media (min-width: 640px) {
+            gap: 1ch;
+        }
+
+        &__col {
+            flex: 1;
+            text-align: right;
+            &.hidden {
+                display: none;
             }
-            &__col span {
-                padding: 1px 0.25rem;
-                margin-right: -0.25rem;
-                border-radius: 0.25rem;
-                border: 1px solid transparent;
+            span {
                 &.pos {
                     color: var(--green);
                     &.tp {
@@ -1512,55 +1513,82 @@
                     background: var(--bg2);
                 }
             }
+        }
 
-            &__rank,
-            &__symbol {
-                text-align: left;
-                span {
-                    margin-right: 0;
-                    margin-left: -0.25rem;
-                }
-            }
-            &__rank {
-                flex: none;
-                min-width: 3ch;
-            }
-            &__percent,
-            &__percent24h,
-            &__gain,
-            &__bet {
-                flex: none;
-                min-width: 5ch;
-            }
-            &__symbol,
-            &__percent,
-            &__percent24h {
-                flex: none;
-                min-width: 6ch;
-            }
-            &__now,
-            &__old,
-            &__stop {
-                flex: 1;
-                min-width: 5ch;
-            }
-            &__stop span {
-                cursor: pointer;
-            }
-            &__symbol {
+        &__stop,
+        &__symbol {
+            span {
                 cursor: pointer;
                 &:hover {
                     color: var(--comment);
                 }
             }
-            &--btc {
-                border-top: none;
-                order: -2 !important;
-            }
+        }
+        &--btc {
+            border-top: none;
+            order: -2 !important;
+        }
 
-            &--eth {
-                order: -1 !important;
+        &__image {
+            padding: 1px 0;
+            height: 1.25rem;
+            img {
+                height: 100%;
             }
+        }
+
+        // &--eth {
+        //     order: -1 !important;
+        // }
+    }
+
+    .coin,
+    .sort {
+        &__image {
+            width: 1.25rem;
+            min-width: 1.25rem;
+            flex: none;
+        }
+        &__col {
+            span {
+                padding: 1px 0.25rem;
+                margin-right: -0.25rem;
+                border-radius: 0.25rem;
+                border: 1px solid transparent;
+            }
+        }
+        &__rank,
+        &__symbol {
+            text-align: left;
+            span {
+                margin-right: 0;
+                margin-left: -0.25rem;
+            }
+        }
+        &__rank {
+            flex: none;
+            min-width: 4ch;
+            width: 4ch;
+        }
+        &__gain,
+        &__bet {
+            flex: none;
+            min-width: 5ch;
+            width: 5ch;
+        }
+        &__symbol,
+        &__percent,
+        &__percent24h {
+            flex: none;
+            min-width: 6ch;
+            width: 6ch;
+        }
+        &__now,
+        &__old,
+        &__stop {
+            flex: 1;
+            min-width: 5ch;
+            width: 5ch;
         }
     }
 
@@ -1568,26 +1596,29 @@
         list-style: none;
         display: flex;
         flex-direction: column;
+        width: 100%;
 
         .search-coin {
-            padding: 0 0.25rem;
+            padding: 0.75rem 0;
             display: flex;
-            border-top: 1px solid var(--fg-trans);
             gap: 0.5ch;
             order: 0 !important;
+            border-bottom: 1px dotted var(--bd);
+            &:first-child {
+                border-top: 1px solid var(--bd);
+            }
             &:last-child {
-                border-bottom: 1px solid var(--fg-trans);
+                border-bottom: 1px solid var(--bd);
             }
             @media (min-width: 640px) {
                 gap: 1ch;
             }
 
             &__image {
-                height: 1.5rem;
-                padding: 0.1875rem;
-                width: 3ch;
-                min-width: 3ch;
+                width: 1.25rem;
+                min-width: 1.25rem;
                 flex: none;
+                height: 1.25rem;
                 img {
                     height: 100%;
                 }
@@ -1616,9 +1647,7 @@
 
     .button {
         border: none;
-        padding: 0 0.5rem;
-        font-size: 0.75rem;
-        line-height: 1.5rem;
+        padding: 0.5rem 0.75rem;
         border-radius: 0.25rem;
         background: var(--bg2);
         border: 1px solid var(--bd);
@@ -1634,8 +1663,8 @@
     }
 
     .loading {
-        // font-size: 10vw;
-        padding: 0 0.5rem;
+        padding: 0.5rem 0.75rem;
+        background: var(--bg);
         border: 1px solid var(--bd);
         border-radius: 0.25rem;
         position: fixed;
@@ -1674,6 +1703,7 @@
         width: 100%;
         display: flex;
         justify-content: space-between;
+        padding: 0.75rem 0.25rem;
         .gains {
             span {
                 padding: 1px 0.25rem;
