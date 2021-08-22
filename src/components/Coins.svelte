@@ -46,7 +46,7 @@
         listObj,
         datasLoaded = false,
         isSearchDatasLoaded = undefined,
-        stops1 = true,
+        stops1 = false,
         stops2 = false,
         isAddingCoin = false,
         isShowingSoldCoins = false,
@@ -568,7 +568,7 @@
                 </div>
                 <!-- SORTS -->
                 <div class="sorts">
-                    {#if !stops1}
+                    {#if !stops1 && !stops2}
                         <!-- <div class="sort__col sort__image">&nbsp;</div> -->
                         <div
                             class="sort__col sort__rank sort"
@@ -601,9 +601,14 @@
                     >
                         <span>Gain</span>
                     </div>
-                    <div class="sort__col sort__bet sort" data-sort="coin__bet">
-                        <span>Bet</span>
-                    </div>
+                    {#if !stops1 && !stops2}
+                        <div
+                            class="sort__col sort__bet sort"
+                            data-sort="coin__bet"
+                        >
+                            <span>Bet</span>
+                        </div>
+                    {/if}
                     <div class="sort__col sort__now">
                         <span>Now</span>
                     </div>
@@ -635,7 +640,7 @@
                         <!-- COINS NOT SOLD -->
                         {#if !coin.sold}
                             <div class="coin coin--{coin.symbol.toLowerCase()}">
-                                {#if !stops1}
+                                {#if !stops1 && !stops2}
                                     <!-- <div class="coin__col coin__image">
                                         {#if coin.image}
                                             <img
@@ -695,11 +700,13 @@
                                         {coin.gains.on.toFixed(0)}
                                     </span>
                                 </div>
-                                <div class="coin__col coin__bet">
-                                    <span>
-                                        {coin.buysValue.toFixed(0)}
-                                    </span>
-                                </div>
+                                {#if !stops1 && !stops2}
+                                    <div class="coin__col coin__bet">
+                                        <span>
+                                            {coin.buysValue.toFixed(0)}
+                                        </span>
+                                    </div>
+                                {/if}
                                 <div class="coin__col coin__now">
                                     <span>
                                         {fixed(coin.currentPrice)}
