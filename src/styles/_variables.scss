@@ -1,3 +1,5 @@
+@import "../styles/_include-media";
+$breakpoints: ( xxs: 320px, xs: 480px, sm: 768px, md: 1024px, lg: 1280px, xl: 1440px, xxl: 1920px, );
 :root {
     --salmon: #e0a080;
     --max-width: 800px;
@@ -42,4 +44,124 @@
 @font-face {
     font-family: "Recursive Variable";
     src: url("../fonts/recursive.ttf") format(truetype);
+}
+
+.col-1 {
+    grid-column: span 1;
+}
+
+.col-2 {
+    grid-column: span 2;
+}
+
+.col-3 {
+    grid-column: span 3;
+}
+
+.col-4 {
+    grid-column: span 4;
+}
+
+.col-5 {
+    grid-column: span 5;
+}
+
+.col-6 {
+    grid-column: span 6;
+}
+
+.col-7 {
+    grid-column: span 7;
+}
+
+.col-8 {
+    grid-column: span 8;
+}
+
+.col-9 {
+    grid-column: span 9;
+}
+
+.col-10 {
+    grid-column: span 10;
+}
+
+.col-11 {
+    grid-column: span 11;
+}
+
+.col-12 {
+    grid-column: span 12;
+}
+
+.col-md-1 {
+    @include media(">=md") {
+        grid-column: span 1;
+    }
+}
+
+.col-md-2 {
+    @include media(">=md") {
+        grid-column: span 2;
+    }
+}
+
+.col-md-3 {
+    @include media(">=md") {
+        grid-column: span 3;
+    }
+}
+
+.col-md-4 {
+    @include media(">=md") {
+        grid-column: span 4;
+    }
+}
+
+.col-md-5 {
+    @include media(">=md") {
+        grid-column: span 5;
+    }
+}
+
+.col-md-6 {
+    @include media(">=md") {
+        grid-column: span 6;
+    }
+}
+
+.col-md-7 {
+    @include media(">=md") {
+        grid-column: span 7;
+    }
+}
+
+.col-md-8 {
+    @include media(">=md") {
+        grid-column: span 8;
+    }
+}
+
+.col-md-9 {
+    @include media(">=md") {
+        grid-column: span 9;
+    }
+}
+
+.col-md-10 {
+    @include media(">=md") {
+        grid-column: span 10;
+    }
+}
+
+.col-md-11 {
+    @include media(">=md") {
+        grid-column: span 11;
+    }
+}
+
+.col-md-12 {
+    @include media(">=md") {
+        grid-column: span 12;
+    }
 }

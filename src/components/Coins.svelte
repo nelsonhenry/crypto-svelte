@@ -55,12 +55,18 @@
             hasError: false,
         };
 
-    const login = async function () {
+    const login = async () => {
         await axios
-            .post(`${baseUrl}/auth/local`, {
-                identifier: loginEmail,
-                password: loginPw,
-            })
+            .post(
+                `${baseUrl}/auth/local`,
+                {
+                    identifier: loginEmail,
+                    password: loginPw,
+                }
+                // {
+                //     withCredentials: true,
+                // }
+            )
             .then((res) => {
                 loginEmail = "";
                 loginPw = "";
@@ -72,7 +78,7 @@
             });
     };
 
-    const getAdminDatas = async function (loginToken) {
+    const getAdminDatas = async (loginToken) => {
         await axios
             .get(`${baseUrl}/coins`, {
                 headers: {
@@ -163,7 +169,7 @@
             });
     };
 
-    const setCoinProps = function (coin) {
+    const setCoinProps = (coin) => {
         // list
         stats.list.push(coin.name);
 
@@ -191,7 +197,7 @@
         coin.gains.off = sumProps(coin.gains, "amount");
     };
 
-    const setCoinApiProps = function (coin, data) {
+    const setCoinApiProps = (coin, data) => {
         if (!coin.sold) {
             coin.image = data.image;
             coin.currentPrice = data.current_price;
@@ -209,19 +215,19 @@
         coin.isAddingBuy = false;
     };
 
-    function computeGains(buysPrice, sellPrice, sellAmount) {
+    const computeGains = (buysPrice, sellPrice, sellAmount) => {
         return sellPrice * sellAmount - buysPrice * sellAmount;
-    }
+    };
 
-    function computeAmount(buysAmount, sellAmount) {
+    const computeAmount = (buysAmount, sellAmount) => {
         return buysAmount - sellAmount;
-    }
+    };
 
-    function computeSold(buysAmount, sellAmount) {
+    const computeSold = (buysAmount, sellAmount) => {
         return buysAmount - sellAmount <= 1 ? true : false;
-    }
+    };
 
-    const searchCoin = async function () {
+    const searchCoin = async () => {
         searchCoins = [];
         isSearchDatasLoaded = false;
         await axios
@@ -252,7 +258,7 @@
             });
     };
 
-    const editStops = async function (coin, stopValue) {
+    const editStops = async (coin, stopValue) => {
         // https://stackoverflow.com/questions/68799891/set-nested-property-of-json-object-using-brackets-notation-in-put-request-svelt
         let index = coins.indexOf(coin);
         await axios
@@ -279,7 +285,7 @@
             });
     };
 
-    const addCoin = async function (coin) {
+    const addCoin = async (coin) => {
         await axios
             .post(
                 `${baseUrl}/coins`,
@@ -338,7 +344,7 @@
             });
     };
 
-    const editCoin = async function (coin) {
+    const editCoin = async (coin) => {
         let buysBody = [];
         if (computeSold(coin.edit.buysAmount, coin.edit.sellAmount) === false) {
             buysBody = [
@@ -386,7 +392,7 @@
             });
     };
 
-    const addBuy = async function (coin) {
+    const addBuy = async (coin) => {
         let index = coins.indexOf(coin);
 
         await axios
@@ -426,12 +432,31 @@
 </script>
 
 <template>
+    <!-- LOADER -->
+    {#if !datasLoaded}
+        <main class="main">
+            <div class="loading">
+                Loading<span class="loading__dot">.</span><span
+                    class="loading__dot">.</span
+                ><span class="loading__dot">.</span>
+            </div>
+        </main>
+    {/if}
+
+    <!-- ERRORS -->
+    {#if error.hasError}
+        {error.admin ? error.admin : ""}
+        {error.datas ? error.datas : ""}
+        {error.update ? error.update : ""}
+        {error.post ? error.post : ""}
+    {/if}
+
     <!-- IS NOT LOGGED -->
     {#if !isLogged}
         <div class="form form--login">
             <div class="form__section">
                 <div class="form__row">
-                    <div class="form__col">
+                    <div class="form__col col-12">
                         <label for="login-email" class="form__label"
                             >Email</label
                         >
@@ -442,7 +467,7 @@
                             bind:value={loginEmail}
                         />
                     </div>
-                    <div class="form__col">
+                    <div class="form__col col-12">
                         <label for="login-pw" class="form__label"
                             >Password</label
                         >
@@ -455,7 +480,7 @@
                     </div>
                 </div>
                 <div class="form__row form__row--no-border">
-                    <div class="form__col">
+                    <div class="form__col col-12">
                         <button
                             type="submit"
                             class="form__btn form__submit"
@@ -469,20 +494,7 @@
 
     <!-- IS LOGGED -->
     {#if isLogged}
-        {#if error.hasError}
-            {error.admin ? error.admin : ""}
-            {error.datas ? error.datas : ""}
-            {error.update ? error.update : ""}
-            {error.post ? error.post : ""}
-        {:else if datasLoaded === false}
-            <main class="main">
-                <div class="loading">
-                    Loading<span class="loading__dot">.</span><span
-                        class="loading__dot">.</span
-                    ><span class="loading__dot">.</span>
-                </div>
-            </main>
-        {:else}
+        {#if datasLoaded}
             <!-- HEADER -->
             <header class="header">
                 <button
@@ -766,11 +778,11 @@
 
                                 <!-- COIN EDIT -->
                                 {#if coin.isEdited}
-                                    <div class="form coin__edit">
+                                    <div class="form form--edit-coin">
                                         <div class="form__section">
                                             <!-- General -->
                                             <div class="form__row">
-                                                <div class="form__col xs">
+                                                <div class="form__col col-4">
                                                     <label
                                                         for="coin-symbol"
                                                         class="form__label"
@@ -784,7 +796,7 @@
                                                         type="text"
                                                     />
                                                 </div>
-                                                <div class="form__col xs">
+                                                <div class="form__col col-8">
                                                     <label
                                                         for="coin-name"
                                                         class="form__label"
@@ -797,23 +809,10 @@
                                                         type="text"
                                                     />
                                                 </div>
-                                                <div class="form__col md">
-                                                    <label
-                                                        for="coin-tradingview"
-                                                        class="form__label"
-                                                        >Trading View</label
-                                                    >
-                                                    <input
-                                                        id="coin-tradingview"
-                                                        class="form__input"
-                                                        value={coin.tradingview}
-                                                        type="url"
-                                                    />
-                                                </div>
                                             </div>
                                             <!-- Buy -->
                                             <div class="form__row">
-                                                <div class="form__col xs">
+                                                <div class="form__col col-4">
                                                     <label
                                                         for=""
                                                         class="form__label"
@@ -827,7 +826,7 @@
                                                             .buysAmount}
                                                     />
                                                 </div>
-                                                <div class="form__col xs">
+                                                <div class="form__col col-4">
                                                     <label
                                                         for=""
                                                         class="form__label"
@@ -841,7 +840,7 @@
                                                             .buysPrice}
                                                     />
                                                 </div>
-                                                <div class="form__col xs">
+                                                <div class="form__col col-4">
                                                     <label
                                                         class="form__label"
                                                         for=""
@@ -862,7 +861,98 @@
                                                             : 0}
                                                     />
                                                 </div>
-                                                <div class="form__col xs">
+                                            </div>
+                                            <!-- Sell -->
+                                            <div class="form__row">
+                                                <div class="form__col col-4">
+                                                    <label
+                                                        for=""
+                                                        class="form__label"
+                                                    >
+                                                        Sell amount
+                                                    </label>
+                                                    <input
+                                                        class="form__input"
+                                                        type="text"
+                                                        bind:value={coin.edit
+                                                            .sellAmount}
+                                                    />
+                                                </div>
+                                                <div class="form__col col-4">
+                                                    <label
+                                                        for=""
+                                                        class="form__label"
+                                                    >
+                                                        Sell price
+                                                    </label>
+                                                    <input
+                                                        class="form__input"
+                                                        type="text"
+                                                        bind:value={coin.edit
+                                                            .sellPrice}
+                                                    />
+                                                </div>
+                                                <div class="form__col col-4">
+                                                    <label
+                                                        for=""
+                                                        class="form__label"
+                                                        >Sell value</label
+                                                    >
+                                                    <input
+                                                        class="form__input"
+                                                        type="text"
+                                                        readonly
+                                                        value={coin.edit
+                                                            .sellAmount &&
+                                                        coin.edit.sellPrice
+                                                            ? coin.edit
+                                                                  .sellAmount *
+                                                              coin.edit
+                                                                  .sellPrice
+                                                            : 0}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <!-- Remaining + gains-->
+                                            <div class="form__row">
+                                                <div class="form__col col-4">
+                                                    <label
+                                                        for=""
+                                                        class="form__label"
+                                                    >
+                                                        Remaining amount
+                                                    </label>
+                                                    <input
+                                                        class="form__input"
+                                                        type="text"
+                                                        readonly
+                                                        value={computeAmount(
+                                                            coin.edit
+                                                                .buysAmount,
+                                                            coin.edit.sellAmount
+                                                        )}
+                                                    />
+                                                </div>
+                                                <div class="form__col col-4">
+                                                    <label
+                                                        for="coin-gain"
+                                                        class="form__label"
+                                                    >
+                                                        Gain
+                                                    </label>
+                                                    <input
+                                                        id="coin-gain"
+                                                        class="form__input"
+                                                        type="text"
+                                                        readonly
+                                                        value={computeGains(
+                                                            coin.edit.buysPrice,
+                                                            coin.edit.sellPrice,
+                                                            coin.edit.sellAmount
+                                                        )}
+                                                    />
+                                                </div>
+                                                <div class="form__col col-4">
                                                     <label
                                                         class="checkbox"
                                                         for="coin-sold"
@@ -890,102 +980,14 @@
                                                     </label>
                                                 </div>
                                             </div>
-                                            <!-- Sell -->
-                                            <div class="form__row">
-                                                <div class="form__col xs">
-                                                    <label
-                                                        for=""
-                                                        class="form__label"
-                                                    >
-                                                        Sell amount
-                                                    </label>
-                                                    <input
-                                                        class="form__input"
-                                                        type="text"
-                                                        bind:value={coin.edit
-                                                            .sellAmount}
-                                                    />
-                                                </div>
-                                                <div class="form__col xs">
-                                                    <label
-                                                        for=""
-                                                        class="form__label"
-                                                    >
-                                                        Sell price
-                                                    </label>
-                                                    <input
-                                                        class="form__input"
-                                                        type="text"
-                                                        bind:value={coin.edit
-                                                            .sellPrice}
-                                                    />
-                                                </div>
-                                                <div class="form__col xs">
-                                                    <label
-                                                        for=""
-                                                        class="form__label"
-                                                        >Sell value</label
-                                                    >
-                                                    <input
-                                                        class="form__input"
-                                                        type="text"
-                                                        readonly
-                                                        value={coin.edit
-                                                            .sellAmount &&
-                                                        coin.edit.sellPrice
-                                                            ? coin.edit
-                                                                  .sellAmount *
-                                                              coin.edit
-                                                                  .sellPrice
-                                                            : 0}
-                                                    />
-                                                </div>
-                                                <div class="form__col xs">
-                                                    <label
-                                                        for="coin-gain"
-                                                        class="form__label"
-                                                    >
-                                                        Gain
-                                                    </label>
-                                                    <input
-                                                        id="coin-gain"
-                                                        class="form__input"
-                                                        type="text"
-                                                        readonly
-                                                        value={computeGains(
-                                                            coin.edit.buysPrice,
-                                                            coin.edit.sellPrice,
-                                                            coin.edit.sellAmount
-                                                        )}
-                                                    />
-                                                </div>
-                                            </div>
-                                            <!-- Remaining -->
-                                            <div class="form__row">
-                                                <div class="form__col xs">
-                                                    <label
-                                                        for=""
-                                                        class="form__label"
-                                                    >
-                                                        Remaining amount
-                                                    </label>
-                                                    <input
-                                                        class="form__input"
-                                                        type="text"
-                                                        readonly
-                                                        value={computeAmount(
-                                                            coin.edit
-                                                                .buysAmount,
-                                                            coin.edit.sellAmount
-                                                        )}
-                                                    />
-                                                </div>
-                                            </div>
+
                                             <!-- Submit or cancel -->
                                             <div
                                                 class="form__row form__row--no-border"
                                             >
-                                                <div class="form__col md">
+                                                <div
+                                                    class="form__col col-6 col-md-8"
+                                                >
                                                     <input
                                                         class="form__btn form__submit"
                                                         type="submit"
@@ -995,7 +997,9 @@
                                                         )}
                                                     />
                                                 </div>
-                                                <div class="form__col md">
+                                                <div
+                                                    class="form__col col-6 col-md-4"
+                                                >
                                                     <button
                                                         class="form__btn form__cancel"
                                                         on:click={() =>
@@ -1114,13 +1118,15 @@
                 </div>
             </main>
         {/if}
-
         <!-- ADD COIN -->
         {#if isAddingCoin}
-            <div class="form coin__add">
+            <div class="form form--add-coin">
                 <div class="form__section">
                     <div class="form__row">
-                        <div class="form__col xs">
+                        <div
+                            class="form__col col-6 col-md-4"
+                            style="position:relative;"
+                        >
                             <label for="add-coin-symbol" class="form__label">
                                 Symbol
                             </label>
@@ -1130,16 +1136,14 @@
                                 class="form__input"
                                 type="text"
                             />
-                        </div>
-                        <div class="form__col xs">
-                            <label for="" class="form__label">&nbsp;</label>
                             <button
-                                class="form__btn"
+                                class="form__btn form__btn--inline"
+                                style="position: absolute; right: 0; bottom: 0; width: auto;"
                                 on:click={searchCoin(post.symbol)}
                                 >Search</button
                             >
                         </div>
-                        <div class="form__col md">
+                        <div class="form__col col-6 col-md-8">
                             <label for="add-coin-name" class="form__label"
                                 >Name</label
                             >
@@ -1151,7 +1155,7 @@
                             />
                         </div>
                         {#if isSearchDatasLoaded}
-                            <div class="form__col">
+                            <div class="form__col col-12">
                                 <!-- <div class="form__label">Results</div> -->
                                 <div class="search-coins">
                                     {#each searchCoins as coin}
@@ -1198,7 +1202,7 @@
                         {/if}
                     </div>
                     <div class="form__row">
-                        <div class="form__col xs">
+                        <div class="form__col col-4">
                             <label for="add-coin-amount" class="form__label"
                                 >Buy amount</label
                             >
@@ -1209,7 +1213,7 @@
                                 type="number"
                             />
                         </div>
-                        <div class="form__col xs">
+                        <div class="form__col col-4">
                             <label for="add-coin-price" class="form__label"
                                 >Buy price</label
                             >
@@ -1220,9 +1224,20 @@
                                 type="number"
                             />
                         </div>
+                        <div class="form__col col-4">
+                            <label for="" class="form__label">Buy value</label>
+                            <input
+                                value={post.buyAmount && post.buyPrice
+                                    ? post.buyAmount * post.buyPrice
+                                    : 0}
+                                id="add-coin-price"
+                                class="form__input"
+                                type="number"
+                            />
+                        </div>
                     </div>
                     <div class="form__row form__row--no-border">
-                        <div class="form__col md">
+                        <div class="form__col col-6 col-md-8">
                             <input
                                 class="form__btn form__submit"
                                 type="submit"
@@ -1230,7 +1245,7 @@
                                 on:click={addCoin}
                             />
                         </div>
-                        <div class="form__col md">
+                        <div class="form__col col-6 col-md-4">
                             <button
                                 class="form__btn form__cancel"
                                 on:click={() => (isAddingCoin = false)}
@@ -1270,10 +1285,9 @@
         overflow-y: auto;
         background: var(--bg);
         display: flex;
-        justify-content: center;
-        align-items: center;
         &__section {
             width: 100%;
+            margin: auto;
             max-width: calc(var(--max-width) + 2rem);
             padding: 1rem;
             display: flex;
@@ -1296,40 +1310,40 @@
                 border: none;
             }
 
-            &-title {
-                grid-column: span 12;
-                margin-bottom: 0.5rem;
-            }
+            // &-title {
+            //     grid-column: span 12;
+            //     margin-bottom: 0.5rem;
+            // }
         }
-        &__col {
-            grid-column: span 12;
-            &.xs {
-                grid-column: span 6;
-                @include media(">=md") {
-                    grid-column: span 3;
-                }
-            }
-            &.sm {
-                @include media(">=md") {
-                    grid-column: span 4;
-                }
-            }
-            &.md {
-                @include media(">=md") {
-                    grid-column: span 6;
-                }
-            }
-            &.lg {
-                @include media(">=md") {
-                    grid-column: span 8;
-                }
-            }
-            &.xl {
-                @include media(">=md") {
-                    grid-column: span 9;
-                }
-            }
-        }
+        // &__col {
+        // grid-column: span 12;
+        // &.xs {
+        //     grid-column: span 6;
+        //     @include media(">=md") {
+        //         grid-column: span 3;
+        //     }
+        // }
+        // &.sm {
+        //     @include media(">=md") {
+        //         grid-column: span 4;
+        //     }
+        // }
+        // &.md {
+        //     @include media(">=md") {
+        //         grid-column: span 6;
+        //     }
+        // }
+        // &.lg {
+        //     @include media(">=md") {
+        //         grid-column: span 8;
+        //     }
+        // }
+        // &.xl {
+        //     @include media(">=md") {
+        //         grid-column: span 9;
+        //     }
+        // }
+        // }
         &__label {
             display: block;
             font-size: 0.75rem;
@@ -1357,6 +1371,14 @@
                 background: var(--bg3);
             }
         }
+        &__btn--inline {
+            padding: 0.25rem 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.75rem;
+            line-height: 1.25rem;
+            border: none;
+            background: var(--bg3);
+        }
         &__submit {
             background: var(--bg2);
         }
@@ -1364,6 +1386,11 @@
 
     .form--login .form__section {
         max-width: calc(400px + 2rem);
+    }
+
+    .form--add-coin,
+    .form--edit-coin {
+        z-index: 11;
     }
 
     .checkbox {
@@ -1603,12 +1630,8 @@
             display: flex;
             gap: 0.5ch;
             order: 0 !important;
-            border-bottom: 1px dotted var(--bd);
-            &:first-child {
-                border-top: 1px solid var(--bd);
-            }
-            &:last-child {
-                border-bottom: 1px solid var(--bd);
+            &:not(:last-child) {
+                border-bottom: 1px dotted var(--bd);
             }
             @media (min-width: 640px) {
                 gap: 1ch;
