@@ -1,6 +1,5 @@
 <script>
-    // ⬢
-    // import { onMount } from "svelte";
+    import Loading from "./Loading.svelte";
     import axios from "axios";
     import List from "list.js";
     import {
@@ -8,16 +7,16 @@
         fixed,
         sumArray,
         sumProps,
-        hasValue,
-        setRootProperty,
+        computeGains,
+        computeAmount,
+        computeSold,
+        smallImg,
     } from "../js/helpers";
 
     let baseUrl = "https://crypto-svelte.herokuapp.com",
-        // baseUrl = "http://localhost:1337",
         isLogged = false,
         loginEmail,
         loginPw,
-        loginToken,
         coins = [],
         post = {},
         stats = {
@@ -41,6 +40,8 @@
                     q2: 0,
                 },
             },
+            maxLooseList: [],
+            maxLoose: 0
         },
         datas = [],
         listObj,
@@ -53,52 +54,75 @@
         searchCoins = [],
         error = {
             hasError: false,
+        },
+        auth;
+
+    const resetVars = () => {
+        coins = [];
+        post = {};
+        stats = {
+            list: [],
+            funds: {
+                onList: [],
+                offList: [],
+                on: 0,
+                off: 0,
+            },
+            buys: {
+                amountList: [],
+                amount: 0,
+            },
+            gains: {
+                onList: [],
+                offList: [],
+                on: 0,
+                off: {
+                    q1: 1606.786106,
+                    q2: 0,
+                },
+            },
         };
+        datas = [];
+        listObj;
+        datasLoaded = false;
+        isSearchDatasLoaded = undefined;
+        isAddingCoin = false;
+        isShowingSoldCoins = false;
+        searchCoins = [];
+        error = {
+            hasError: false,
+        };
+    };
 
     const login = async () => {
         await axios
-            .post(
-                `${baseUrl}/auth/local`,
-                {
-                    identifier: loginEmail,
-                    password: loginPw,
-                }
-                // {
-                //     withCredentials: true,
-                // }
-            )
+            .post(`${baseUrl}/auth/local`, {
+                identifier: loginEmail,
+                password: loginPw,
+            })
             .then((res) => {
                 loginEmail = "";
                 loginPw = "";
-                loginToken = res.data.jwt;
-                getAdminDatas(loginToken);
+                auth = {
+                    headers: {
+                        Authorization: `Bearer ${res.data.jwt}`,
+                    },
+                };
+                isLogged = true;
+                getAdminDatas();
             })
             .catch((error) => {
                 console.log("An error occurred:", error.response);
             });
     };
 
-    const getAdminDatas = async (loginToken) => {
+    const getAdminDatas = async () => {
         await axios
-            .get(`${baseUrl}/coins`, {
-                headers: {
-                    Authorization: `Bearer ${loginToken}`,
-                },
-            })
+            .get(`${baseUrl}/coins`, auth)
             .then((res) => {
-                // console.log("1", res);
-                isLogged = true;
                 coins = res.data;
                 for (let coin of coins) {
                     setCoinProps(coin);
-                    // set edit values
-                    coin.edit = {};
-                    coin.edit.buysAmount = coin.buysAmount;
-                    coin.edit.buysPrice = coin.buysPrice;
-                    coin.edit.buysValue = coin.buysValue;
-                    coin.edit.sellAmount = coin.buysAmount;
-                    coin.edit.sellPrice = coin.buysPrice;
-                    coin.edit.sellValue = coin.buysValue;
                 }
 
                 // get coingecko datas
@@ -109,7 +133,6 @@
                         )}`
                     )
                     .then((res) => {
-                        // console.log("2", res);
                         datas = res.data;
                         Object.entries(datas).forEach((el) => {
                             let data = el[1];
@@ -119,27 +142,11 @@
                             setCoinApiProps(coin, data);
                         });
 
+                        stats.funds.off = 18670;
                         stats.funds.on = sumArray(stats.funds.onList);
                         stats.gains.on = sumArray(stats.gains.onList);
                         stats.gains.off.q2 = sumArray(stats.gains.offList);
 
-                        stats.funds.off = 18670;
-                        // axios
-                        //     .get(`${baseUrl}/funds`, {
-                        //         headers: {
-                        //             Authorization: `Bearer ${loginToken}`,
-                        //         },
-                        //     })
-                        //     .then((res) => {
-                        //         let deposits = res.data.deposit;
-                        //         for (let deposit of deposits) {
-                        //             stats.funds.offList.push(deposit.amount);
-                        //         }
-                        //         stats.funds.off =
-                        //             sumArray(stats.funds.offList) * 1.16757; // eur -> usd
-                        //     });
-
-                        // end code
                         datasLoaded = true;
                     })
                     .then(() => {
@@ -187,7 +194,22 @@
             coin.buysPrice =
                 sumArray(coin.buysValueList) / sumArray(coin.buysAmountList);
 
+            coin.edit = {
+                buysAmount: coin.buysAmount,
+                buysPrice: coin.buysPrice,
+                buysValue: coin.buysValue,
+                sellAmount: coin.buysAmount,
+                sellPrice: coin.buysPrice,
+                sellValue: coin.buysValue,
+            };
+
             stats.funds.onList.push(coin.buysValue);
+
+            if (coin.stops.min10) stats.maxLooseList.push(coin.buysValue * -0.1);
+            if (coin.stops.max10) stats.maxLooseList.push(coin.buysValue * 0.1);
+            if (coin.stops.max20) stats.maxLooseList.push(coin.buysValue * 0.2);
+            if (coin.stops.max30) stats.maxLooseList.push(coin.buysValue * 0.3);
+            stats.maxLoose = sumArray(stats.maxLooseList);
         }
 
         // gains off + stats gains off
@@ -199,7 +221,6 @@
 
     const setCoinApiProps = (coin, data) => {
         if (!coin.sold) {
-            coin.image = data.image;
             coin.currentPrice = data.current_price;
             coin.percentChange24h = data.price_change_percentage_24h;
             coin.percentChange = percentChange(
@@ -215,19 +236,8 @@
         coin.isAddingBuy = false;
     };
 
-    const computeGains = (buysPrice, sellPrice, sellAmount) => {
-        return sellPrice * sellAmount - buysPrice * sellAmount;
-    };
-
-    const computeAmount = (buysAmount, sellAmount) => {
-        return buysAmount - sellAmount;
-    };
-
-    const computeSold = (buysAmount, sellAmount) => {
-        return buysAmount - sellAmount <= 1 ? true : false;
-    };
-
     const searchCoin = async () => {
+        if (!post.symbol) return;
         searchCoins = [];
         isSearchDatasLoaded = false;
         await axios
@@ -246,7 +256,7 @@
                             `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coin.id}`
                         )
                         .then((res) => {
-                            coin.image = res.data[0].image;
+                            coin.image = smallImg(res.data[0].image);
                             coin.marketCapRank = res.data[0].market_cap_rank;
                             isSearchDatasLoaded = true;
                         })
@@ -270,11 +280,7 @@
                         [stopValue]: coin.stops[stopValue] ? false : true,
                     },
                 },
-                {
-                    headers: {
-                        Authorization: `Bearer ${loginToken}`,
-                    },
-                }
+                auth
             )
             .then((res) => {
                 coins[index].stops[stopValue] = res.data.stops[stopValue];
@@ -307,36 +313,11 @@
                         max30: false,
                     },
                 },
-                {
-                    headers: {
-                        Authorization: `Bearer ${loginToken}`,
-                    },
-                }
+                auth
             )
             .then((res) => {
                 isAddingCoin = false;
-                getAdminDatas(loginToken);
-                // let coin = res.data;
-                // setCoinProps(coin);
-
-                // get coingecko datas
-                // axios
-                //     .get(
-                //         `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coin.name}`
-                //     )
-                //     .then((res) => {
-                //         let data = res.data;
-                //         setCoinApiProps(coin, data);
-                //     })
-                //     .then(() => {
-                //         listObj.sort("coin__percent", {
-                //             order: "desc",
-                //         });
-                //     })
-                //     .catch((err) => {
-                //         error.hasError = true;
-                //         error.datas = "datas: " + err.message;
-                //     });
+                getAdminDatas();
             })
             .catch((err) => {
                 error.hasError = true;
@@ -345,6 +326,7 @@
     };
 
     const editCoin = async (coin) => {
+        let index = coins.indexOf(coin);
         let buysBody = [];
         if (computeSold(coin.edit.buysAmount, coin.edit.sellAmount) === false) {
             buysBody = [
@@ -375,16 +357,13 @@
                         },
                     ],
                 },
-                {
-                    headers: {
-                        Authorization: `Bearer ${loginToken}`,
-                    },
-                }
+                auth
             )
             .then((res) => {
-                console.log(res.data);
+                console.log(res);
+                // coins = [...coins, res.]
                 coin.isEdited = false;
-                // coins[index].stops[stopValue] = res.data.stops[stopValue];
+                getAdminDatas();
             })
             .catch((err) => {
                 error.hasError = true;
@@ -393,8 +372,6 @@
     };
 
     const addBuy = async (coin) => {
-        let index = coins.indexOf(coin);
-
         await axios
             .put(
                 `${baseUrl}/coins/${coin.id}`,
@@ -414,15 +391,11 @@
                         max30: false,
                     },
                 },
-                {
-                    headers: {
-                        Authorization: `Bearer ${loginToken}`,
-                    },
-                }
+                auth
             )
             .then((res) => {
                 coin.isAddingBuy = false;
-                console.log(res.data);
+                getAdminDatas();
             })
             .catch((err) => {
                 error.hasError = true;
@@ -432,34 +405,15 @@
 </script>
 
 <template>
-    <!-- LOADER -->
-    {#if !datasLoaded}
-        <main class="main">
-            <div class="loading">
-                Loading<span class="loading__dot">.</span><span
-                    class="loading__dot">.</span
-                ><span class="loading__dot">.</span>
-            </div>
-        </main>
-    {/if}
-
-    <!-- ERRORS -->
-    {#if error.hasError}
-        {error.admin ? error.admin : ""}
-        {error.datas ? error.datas : ""}
-        {error.update ? error.update : ""}
-        {error.post ? error.post : ""}
-    {/if}
-
     <!-- IS NOT LOGGED -->
     {#if !isLogged}
         <div class="form form--login">
             <div class="form__section">
                 <div class="form__row">
                     <div class="form__col col-12">
-                        <label for="login-email" class="form__label"
-                            >Email</label
-                        >
+                        <label for="login-email" class="form__label">
+                            Email
+                        </label>
                         <input
                             id="login-email"
                             type="email"
@@ -468,9 +422,9 @@
                         />
                     </div>
                     <div class="form__col col-12">
-                        <label for="login-pw" class="form__label"
-                            >Password</label
-                        >
+                        <label for="login-pw" class="form__label">
+                            Password
+                        </label>
                         <input
                             id="login-pw"
                             type="password"
@@ -481,11 +435,12 @@
                 </div>
                 <div class="form__row form__row--no-border">
                     <div class="form__col col-12">
-                        <button
+                        <input
                             type="submit"
+                            value="Login"
                             class="form__btn form__submit"
-                            on:click={login}>Login</button
-                        >
+                            on:click={login}
+                        />
                     </div>
                 </div>
             </div>
@@ -494,6 +449,10 @@
 
     <!-- IS LOGGED -->
     {#if isLogged}
+        <!-- LOADER -->
+        {#if !datasLoaded}
+            <Loading />
+        {/if}
         {#if datasLoaded}
             <!-- HEADER -->
             <header class="header">
@@ -521,12 +480,15 @@
                 <button class="button" on:click={() => (isAddingCoin = true)}>
                     Add coin
                 </button>
+                <button class="button" on:click={() => testGetAdminDatas()}>
+                    Reload
+                </button>
             </header>
             <!-- MAIN -->
             <main class="main" id="listjs">
                 <!-- STATS -->
                 <div class="stats">
-                    <div class="gains">
+                    <div class="stats__col">
                         <span class={stats.gains.on >= 0 ? "pos" : "neg"}>
                             {stats.gains.on >= 0
                                 ? "+"
@@ -536,10 +498,10 @@
                                 : ""}{percentChange(
                                 stats.funds.on,
                                 stats.funds.on + stats.gains.on
-                            ).toFixed(1)}%)</span
-                        >
+                            ).toFixed(1)}%)
+                        </span>
                     </div>
-                    <div>
+                    <div class="stats__col">
                         {stats.funds.on.toFixed(0)}/{stats.funds.off.toFixed(
                             0
                         )}&nbsp;({(
@@ -547,7 +509,7 @@
                             100
                         ).toFixed(1)}%)
                     </div>
-                    <div class="gains">
+                    <div class="stats__col">
                         <span
                             class={stats.gains.off.q1 + stats.gains.off.q2 >= 0
                                 ? "pos"
@@ -555,10 +517,24 @@
                         >
                             {stats.gains.off.q1 + stats.gains.off.q2 >= 0
                                 ? "+"
-                                : "-"}{(
-                                stats.gains.off.q1 + stats.gains.off.q2
-                            ).toFixed(0)}
-                        </span>&nbsp;[{stats.gains.off.q1 >= 0
+                                : "-"}
+                            {(stats.gains.off.q1 + stats.gains.off.q2).toFixed(
+                                0
+                            )}
+                        </span>
+                    </div>
+                </div>
+                <div class="stats">
+                    <div class="stats__col">
+                        {stats.maxLoose.toFixed(0)}&nbsp;({stats.maxLoose >= 0
+                                ? "+"
+                                : ""}{percentChange(
+                                stats.funds.on,
+                                stats.funds.on + stats.maxLoose
+                            ).toFixed(1)}%)
+                    </div>
+                    <div class="stats__col">
+                        [{stats.gains.off.q1 >= 0
                             ? "+"
                             : ""}{stats.gains.off.q1.toFixed(0)},&nbsp;{stats
                             .gains.off.q2 >= 0
@@ -569,7 +545,6 @@
                 <!-- SORTS -->
                 <div class="sorts">
                     {#if !stops1 && !stops2}
-                        <!-- <div class="sort__col sort__image">&nbsp;</div> -->
                         <div
                             class="sort__col sort__rank sort"
                             data-sort="coin__rank"
@@ -641,14 +616,6 @@
                         {#if !coin.sold}
                             <div class="coin coin--{coin.symbol.toLowerCase()}">
                                 {#if !stops1 && !stops2}
-                                    <!-- <div class="coin__col coin__image">
-                                        {#if coin.image}
-                                            <img
-                                                src={coin.image}
-                                                alt="coin logo"
-                                            />
-                                        {/if}
-                                    </div> -->
                                     <div class="coin__col coin__rank">
                                         <span>
                                             {coin.marketCapRank !== null
@@ -998,7 +965,7 @@
                                                     <input
                                                         class="form__btn form__submit"
                                                         type="submit"
-                                                        value="submit"
+                                                        value="Submit"
                                                         on:click={editCoin(
                                                             coin
                                                         )}
@@ -1048,11 +1015,11 @@
                                     {coin.gains.off.toFixed(0)}
                                 </div>
                                 {#if coin.isAddingBuy}
-                                    <div class="form coin__addbuy">
+                                    <div class="form form--add-buy">
                                         <div class="form__section">
                                             <!-- Buy -->
                                             <div class="form__row">
-                                                <div class="form__col xs">
+                                                <div class="form__col col-4">
                                                     <label
                                                         for=""
                                                         class="form__label"
@@ -1065,7 +1032,7 @@
                                                         bind:value={coin.addBuyAmount}
                                                     />
                                                 </div>
-                                                <div class="form__col xs">
+                                                <div class="form__col col-4">
                                                     <label
                                                         for=""
                                                         class="form__label"
@@ -1078,7 +1045,7 @@
                                                         bind:value={coin.addBuyPrice}
                                                     />
                                                 </div>
-                                                <div class="form__col xs">
+                                                <div class="form__col col-4">
                                                     <label
                                                         class="form__label"
                                                         for="">Buys value</label
@@ -1099,7 +1066,9 @@
                                             <div
                                                 class="form__row form__row--no-border"
                                             >
-                                                <div class="form__col md">
+                                                <div
+                                                    class="form__col col-6 col-md-4"
+                                                >
                                                     <button
                                                         class="form__btn form__cancel"
                                                         on:click={() =>
@@ -1107,11 +1076,13 @@
                                                         >Cancel</button
                                                     >
                                                 </div>
-                                                <div class="form__col md">
+                                                <div
+                                                    class="form__col col-6 col-md-8"
+                                                >
                                                     <input
                                                         class="form__btn form__submit"
                                                         type="submit"
-                                                        value="submit"
+                                                        value="Submit"
                                                         on:click={addBuy(coin)}
                                                     />
                                                 </div>
@@ -1124,145 +1095,153 @@
                     {/each}
                 </div>
             </main>
-        {/if}
-        <!-- ADD COIN -->
-        {#if isAddingCoin}
-            <div class="form form--add-coin">
-                <div class="form__section">
-                    <div class="form__row">
-                        <div
-                            class="form__col col-6 col-md-4"
-                            style="position:relative;"
-                        >
-                            <label for="add-coin-symbol" class="form__label">
-                                Symbol
-                            </label>
-                            <input
-                                bind:value={post.symbol}
-                                id="add-coin-symbol"
-                                class="form__input"
-                                type="text"
-                            />
-                            <button
-                                class="form__btn form__btn--inline"
-                                style="position: absolute; right: 0; bottom: 0; width: auto;"
-                                on:click={searchCoin(post.symbol)}
-                                >Search</button
+            <!-- ADD COIN -->
+            {#if isAddingCoin}
+                <div class="form form--add-coin">
+                    <div class="form__section">
+                        <div class="form__row">
+                            <div
+                                class="form__col col-6 col-md-4"
+                                style="position:relative;"
                             >
-                        </div>
-                        <div class="form__col col-6 col-md-8">
-                            <label for="add-coin-name" class="form__label"
-                                >Name</label
-                            >
-                            <input
-                                bind:value={post.name}
-                                id="add-coin-name"
-                                class="form__input"
-                                type="text"
-                            />
-                        </div>
-                        {#if isSearchDatasLoaded}
-                            <div class="form__col col-12">
-                                <!-- <div class="form__label">Results</div> -->
-                                <div class="search-coins">
-                                    {#each searchCoins as coin}
-                                        <div class="search-coin">
-                                            <div
-                                                class="search-coin__col search-coin__image"
-                                            >
-                                                {#if coin.image}
-                                                    <img
-                                                        src={coin.image}
-                                                        alt="coin logo"
-                                                    />
-                                                {/if}
+                                <label
+                                    for="add-coin-symbol"
+                                    class="form__label"
+                                >
+                                    Symbol
+                                </label>
+                                <input
+                                    bind:value={post.symbol}
+                                    id="add-coin-symbol"
+                                    class="form__input"
+                                    type="text"
+                                />
+                                <button
+                                    class="form__btn form__btn--inline"
+                                    style="position: absolute; right: 0; bottom: 0; width: auto;"
+                                    on:click={searchCoin(post.symbol)}
+                                    >Search</button
+                                >
+                            </div>
+                            <div class="form__col col-6 col-md-8">
+                                <label for="add-coin-name" class="form__label"
+                                    >Name</label
+                                >
+                                <input
+                                    bind:value={post.name}
+                                    id="add-coin-name"
+                                    class="form__input"
+                                    type="text"
+                                />
+                            </div>
+                            {#if isSearchDatasLoaded}
+                                <div class="form__col col-12">
+                                    <div class="search-coins">
+                                        {#each searchCoins as coin}
+                                            <div class="search-coin">
+                                                <div
+                                                    class="search-coin__col search-coin__image"
+                                                >
+                                                    {#if coin.image}
+                                                        <img
+                                                            src={coin.image}
+                                                            alt="coin logo"
+                                                        />
+                                                    {/if}
+                                                </div>
+                                                <div
+                                                    class="search-coin__col search-coin__rank"
+                                                >
+                                                    {coin.marketCapRank
+                                                        ? coin.marketCapRank
+                                                        : "/"}
+                                                </div>
+                                                <div
+                                                    class="search-coin__col search-coin__symbol"
+                                                >
+                                                    {coin.symbol.toUpperCase()}
+                                                </div>
+                                                <div
+                                                    class="search-coin__col search-coin__name"
+                                                    on:click={() =>
+                                                        (post.name = coin.id)}
+                                                >
+                                                    {coin.id}
+                                                </div>
                                             </div>
-                                            <div
-                                                class="search-coin__col search-coin__rank"
-                                            >
-                                                {coin.marketCapRank
-                                                    ? coin.marketCapRank
-                                                    : "/"}
-                                            </div>
-                                            <div
-                                                class="search-coin__col search-coin__symbol"
-                                            >
-                                                {coin.symbol.toUpperCase()}
-                                            </div>
-                                            <div
-                                                class="search-coin__col search-coin__name"
-                                                on:click={() =>
-                                                    (post.name = coin.id)}
-                                            >
-                                                {coin.id}
-                                            </div>
-                                        </div>
-                                    {/each}
+                                        {/each}
+                                    </div>
                                 </div>
+                            {:else if isSearchDatasLoaded === false}
+                                <Loading />
+                            {/if}
+                        </div>
+                        <div class="form__row">
+                            <div class="form__col col-4">
+                                <label for="add-coin-amount" class="form__label"
+                                    >Buy amount</label
+                                >
+                                <input
+                                    bind:value={post.buyAmount}
+                                    id="add-coin-amount"
+                                    class="form__input"
+                                    type="number"
+                                />
                             </div>
-                        {:else if isSearchDatasLoaded === false}
-                            <div class="loading">
-                                Loading<span class="loading__dot">.</span><span
-                                    class="loading__dot">.</span
-                                ><span class="loading__dot">.</span>
+                            <div class="form__col col-4">
+                                <label for="add-coin-price" class="form__label"
+                                    >Buy price</label
+                                >
+                                <input
+                                    bind:value={post.buyPrice}
+                                    id="add-coin-price"
+                                    class="form__input"
+                                    type="number"
+                                />
                             </div>
-                        {/if}
-                    </div>
-                    <div class="form__row">
-                        <div class="form__col col-4">
-                            <label for="add-coin-amount" class="form__label"
-                                >Buy amount</label
-                            >
-                            <input
-                                bind:value={post.buyAmount}
-                                id="add-coin-amount"
-                                class="form__input"
-                                type="number"
-                            />
+                            <div class="form__col col-4">
+                                <label for="" class="form__label"
+                                    >Buy value</label
+                                >
+                                <input
+                                    value={post.buyAmount && post.buyPrice
+                                        ? post.buyAmount * post.buyPrice
+                                        : 0}
+                                    id="add-coin-price"
+                                    class="form__input"
+                                    type="number"
+                                />
+                            </div>
                         </div>
-                        <div class="form__col col-4">
-                            <label for="add-coin-price" class="form__label"
-                                >Buy price</label
-                            >
-                            <input
-                                bind:value={post.buyPrice}
-                                id="add-coin-price"
-                                class="form__input"
-                                type="number"
-                            />
-                        </div>
-                        <div class="form__col col-4">
-                            <label for="" class="form__label">Buy value</label>
-                            <input
-                                value={post.buyAmount && post.buyPrice
-                                    ? post.buyAmount * post.buyPrice
-                                    : 0}
-                                id="add-coin-price"
-                                class="form__input"
-                                type="number"
-                            />
-                        </div>
-                    </div>
-                    <div class="form__row form__row--no-border">
-                        <div class="form__col col-6 col-md-8">
-                            <input
-                                class="form__btn form__submit"
-                                type="submit"
-                                value="submit"
-                                on:click={addCoin}
-                            />
-                        </div>
-                        <div class="form__col col-6 col-md-4">
-                            <button
-                                class="form__btn form__cancel"
-                                on:click={() => (isAddingCoin = false)}
-                                >Cancel</button
-                            >
+                        <div class="form__row form__row--no-border">
+                            <div class="form__col col-6 col-md-8">
+                                <input
+                                    class="form__btn form__submit"
+                                    type="submit"
+                                    value="Submit"
+                                    on:click={addCoin}
+                                />
+                            </div>
+                            <div class="form__col col-6 col-md-4">
+                                <button
+                                    class="form__btn form__cancel"
+                                    on:click={() => (isAddingCoin = false)}
+                                    >Cancel</button
+                                >
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            {/if}
         {/if}
+    {/if}
+
+    <!-- ERRORS -->
+    {#if error.hasError}
+        {error.admin ? error.admin : ""}
+        {error.datas ? error.datas : ""}
+        {error.update ? error.update : ""}
+        {error.post ? error.post : ""}
     {/if}
 </template>
 
@@ -1279,12 +1258,9 @@
         xxl: 1920px,
     );
 
-    .hidden {
-        display: none !important;
-    }
-
     .form {
         position: fixed;
+        z-index: 11;
         top: 0;
         left: 0;
         width: 100%;
@@ -1299,72 +1275,42 @@
             padding: 1rem;
             display: flex;
             flex-direction: column;
-            gap: 1.5rem;
+            gap: 3rem 1.5rem;
         }
         &__row {
-            background: var(--bg2);
-            padding: 1.5rem;
-            border-radius: 0.25rem;
-            border: 1px solid var(--bg3);
+            // background: var(--bg2);
+            // padding: 1.5rem;
+            // border-radius: 0.25rem;
+            // border: 1px solid var(--bg3);
             display: grid;
             grid-template-columns: repeat(12, 1fr);
             gap: 1.5rem;
-
             &--no-border {
                 padding: 0;
                 border-radius: 0;
                 background: none;
                 border: none;
             }
-
-            // &-title {
-            //     grid-column: span 12;
-            //     margin-bottom: 0.5rem;
-            // }
         }
-        // &__col {
-        // grid-column: span 12;
-        // &.xs {
-        //     grid-column: span 6;
-        //     @include media(">=md") {
-        //         grid-column: span 3;
-        //     }
-        // }
-        // &.sm {
-        //     @include media(">=md") {
-        //         grid-column: span 4;
-        //     }
-        // }
-        // &.md {
-        //     @include media(">=md") {
-        //         grid-column: span 6;
-        //     }
-        // }
-        // &.lg {
-        //     @include media(">=md") {
-        //         grid-column: span 8;
-        //     }
-        // }
-        // &.xl {
-        //     @include media(">=md") {
-        //         grid-column: span 9;
-        //     }
-        // }
-        // }
         &__label {
             display: block;
-            font-size: 0.75rem;
-            text-transform: uppercase;
+            font-size: 0.875rem;
+            // text-transform: uppercase;
             color: var(--comment);
+            margin-bottom: 0.75rem;
         }
         &__input {
             width: 100%;
-            border-bottom: 1px solid var(--bd);
+            // border: 1px solid var(--bg3);
+            border: 1px solid var(--bd);
+            border-radius: 0.25rem;
             // line-height: 1.5;
-            padding: 0.75rem 0;
+            padding: 0.75rem;
+            background: var(--bg);
             &:focus {
                 outline: none;
-                border-bottom: 1px solid var(--bd);
+                border: 1px solid var(--bd);
+                background: var(--bg2);
             }
         }
         &__btn {
@@ -1373,18 +1319,22 @@
             padding: 0.75rem 1rem;
             border-radius: 0.25rem;
             border: 1px solid var(--bd);
-            text-transform: uppercase;
+            // text-transform: uppercase;
             &:hover {
                 background: var(--bg3);
             }
         }
         &__btn--inline {
-            padding: 0.25rem 0.5rem;
+            padding: 0.25rem 0.75rem;
             margin-bottom: 0.5rem;
-            font-size: 0.75rem;
+            font-size: 0.875rem;
             line-height: 1.25rem;
             border: none;
-            background: var(--bg3);
+            // background: var(--bg3);
+            background: none;
+            &:hover {
+                background: none;
+            }
         }
         &__submit {
             background: var(--bg2);
@@ -1395,22 +1345,16 @@
         max-width: calc(400px + 2rem);
     }
 
-    .form--add-coin,
-    .form--edit-coin {
-        z-index: 11;
-    }
-
     .checkbox {
         display: block;
         position: relative;
-        margin-top: 1.5rem;
-        height: 2.25rem;
-        border-bottom: 1px solid var(--bd);
+        top: 2rem;
+        height: calc(2.5rem + 2px);
         cursor: pointer;
         user-select: none;
         &__label {
             position: absolute;
-            top: -1.5rem;
+            top: -2rem;
             left: 0;
         }
         &__input {
@@ -1420,7 +1364,6 @@
             height: 0;
             width: 0;
         }
-
         &__mark {
             position: absolute;
             bottom: 0;
@@ -1431,13 +1374,19 @@
                 position: absolute;
                 left: 0;
                 bottom: 0;
-                padding: 0.75rem 0;
+                padding: 0.75rem;
+                width: 100%;
+                border: 1px solid var(--bd);
+                border-radius: 0.25rem;
             }
         }
-
         &__input:checked ~ &__mark:after {
             content: "Yes";
         }
+    }
+
+    .hidden {
+        display: none !important;
     }
 
     .header {
@@ -1558,22 +1507,10 @@
                 }
             }
         }
-        &--btc {
+        &--btc, &--eth {
             border-top: none;
             order: -2 !important;
         }
-
-        &__image {
-            padding: 1px 0;
-            height: 1.25rem;
-            img {
-                height: 100%;
-            }
-        }
-
-        // &--eth {
-        //     order: -1 !important;
-        // }
     }
 
     .coin,
@@ -1692,49 +1629,16 @@
         }
     }
 
-    .loading {
-        padding: 0.5rem 0.75rem;
-        background: var(--bg);
-        border: 1px solid var(--bd);
-        border-radius: 0.25rem;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        text-align: center;
-
-        &__dots {
-            flex-wrap: wrap;
-            display: inline-flex;
-            word-break: break-all;
-        }
-        @keyframes blink {
-            0% {
-                opacity: 0;
-            }
-            50% {
-                opacity: 1;
-            }
-        }
-        &__dot {
-            word-break: break-all;
-            animation: blink 1s infinite;
-            animation-timing-function: step-end;
-            &:nth-child(2) {
-                animation-delay: 0.25s;
-            }
-            &:nth-child(3) {
-                animation-delay: 0.5s;
-            }
-        }
-    }
-
     .stats {
         width: 100%;
         display: flex;
         justify-content: space-between;
-        padding: 0.75rem 0.25rem;
-        .gains {
+        padding: 0 0.25rem;
+        &+& {
+            margin-top: 0.5rem;
+        }
+        &__col {
+            white-space: nowrap;
             span {
                 padding: 1px 0.25rem;
                 margin-right: -0.25rem;

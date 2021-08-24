@@ -14,5 +14,6 @@
         @import "./styles/_variables";
         @import "./styles/_include-media";
         @import "./styles/_global";
+        @import "./styles/_form";
     }
 </style>
