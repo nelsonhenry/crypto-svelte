@@ -631,8 +631,7 @@
                         >
                             {stats.gains.off.q1 + stats.gains.off.q2 >= 0
                                 ? "+"
-                                : "-"}
-                            {(stats.gains.off.q1 + stats.gains.off.q2).toFixed(
+                                : "-"}{(stats.gains.off.q1 + stats.gains.off.q2).toFixed(
                                 0
                             )}
                         </span>
@@ -648,12 +647,12 @@
                         ).toFixed(1)}%)
                     </div>
                     <div class="stats__col">
-                        [{stats.gains.off.q1 >= 0
+                        ({stats.gains.off.q1 >= 0
                             ? "+"
                             : ""}{stats.gains.off.q1.toFixed(0)},&nbsp;{stats
                             .gains.off.q2 >= 0
                             ? "+"
-                            : ""}{stats.gains.off.q2.toFixed(0)}]
+                            : ""}{stats.gains.off.q2.toFixed(0)})
                     </div>
                 </div>
                 <!-- SORTS -->
