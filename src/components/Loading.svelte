@@ -26,12 +26,6 @@
             text-align: center;
         }
 
-        &__dots {
-            flex-wrap: wrap;
-            display: inline-flex;
-            word-break: break-all;
-        }
-
         @keyframes blink {
             0% {
                 opacity: 0;

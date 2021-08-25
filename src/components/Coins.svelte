@@ -41,7 +41,7 @@
                 },
             },
             maxLooseList: [],
-            maxLoose: 0
+            maxLoose: 0,
         },
         datas = [],
         listObj,
@@ -92,28 +92,6 @@
         error = {
             hasError: false,
         };
-    };
-
-    const login = async () => {
-        await axios
-            .post(`${baseUrl}/auth/local`, {
-                identifier: loginEmail,
-                password: loginPw,
-            })
-            .then((res) => {
-                loginEmail = "";
-                loginPw = "";
-                auth = {
-                    headers: {
-                        Authorization: `Bearer ${res.data.jwt}`,
-                    },
-                };
-                isLogged = true;
-                getAdminDatas();
-            })
-            .catch((error) => {
-                console.log("An error occurred:", error.response);
-            });
     };
 
     const getAdminDatas = async () => {
@@ -176,6 +154,43 @@
             });
     };
 
+    const checkIfLogged = async () => {
+        if (sessionStorage.getItem("auth")) {
+            isLogged = true;
+            auth = {
+                headers: {
+                    Authorization: `Bearer ${sessionStorage.getItem("auth")}`,
+                },
+            };
+            await getAdminDatas();
+        }
+    };
+
+    checkIfLogged();
+
+    const login = async () => {
+        await axios
+            .post(`${baseUrl}/auth/local`, {
+                identifier: loginEmail,
+                password: loginPw,
+            })
+            .then((res) => {
+                loginEmail = "";
+                loginPw = "";
+                sessionStorage.setItem("auth", res.data.jwt);
+                auth = {
+                    headers: {
+                        Authorization: `Bearer ${res.data.jwt}`,
+                    },
+                };
+                isLogged = true;
+                getAdminDatas();
+            })
+            .catch((error) => {
+                console.log("An error occurred:", error.response);
+            });
+    };
+
     const setCoinProps = (coin) => {
         // list
         stats.list.push(coin.name);
@@ -205,7 +220,8 @@
 
             stats.funds.onList.push(coin.buysValue);
 
-            if (coin.stops.min10) stats.maxLooseList.push(coin.buysValue * -0.1);
+            if (coin.stops.min10)
+                stats.maxLooseList.push(coin.buysValue * -0.1);
             if (coin.stops.max10) stats.maxLooseList.push(coin.buysValue * 0.1);
             if (coin.stops.max20) stats.maxLooseList.push(coin.buysValue * 0.2);
             if (coin.stops.max30) stats.maxLooseList.push(coin.buysValue * 0.3);
@@ -317,7 +333,7 @@
             )
             .then((res) => {
                 isAddingCoin = false;
-                getAdminDatas();
+                // getAdminDatas();
             })
             .catch((err) => {
                 error.hasError = true;
@@ -360,10 +376,9 @@
                 auth
             )
             .then((res) => {
-                console.log(res);
                 // coins = [...coins, res.]
                 coin.isEdited = false;
-                getAdminDatas();
+                // getAdminDatas();
             })
             .catch((err) => {
                 error.hasError = true;
@@ -395,7 +410,7 @@
             )
             .then((res) => {
                 coin.isAddingBuy = false;
-                getAdminDatas();
+                // getAdminDatas();
             })
             .catch((err) => {
                 error.hasError = true;
@@ -480,9 +495,6 @@
                 <button class="button" on:click={() => (isAddingCoin = true)}>
                     Add coin
                 </button>
-                <button class="button" on:click={() => testGetAdminDatas()}>
-                    Reload
-                </button>
             </header>
             <!-- MAIN -->
             <main class="main" id="listjs">
@@ -527,11 +539,11 @@
                 <div class="stats">
                     <div class="stats__col">
                         {stats.maxLoose.toFixed(0)}&nbsp;({stats.maxLoose >= 0
-                                ? "+"
-                                : ""}{percentChange(
-                                stats.funds.on,
-                                stats.funds.on + stats.maxLoose
-                            ).toFixed(1)}%)
+                            ? "+"
+                            : ""}{percentChange(
+                            stats.funds.on,
+                            stats.funds.on + stats.maxLoose
+                        ).toFixed(1)}%)
                     </div>
                     <div class="stats__col">
                         [{stats.gains.off.q1 >= 0
@@ -978,8 +990,9 @@
                                                         class="form__btn form__cancel"
                                                         on:click={() =>
                                                             (coin.isEdited = false)}
-                                                        >Cancel</button
                                                     >
+                                                        Cancel
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
@@ -1067,16 +1080,6 @@
                                                 class="form__row form__row--no-border"
                                             >
                                                 <div
-                                                    class="form__col col-6 col-md-4"
-                                                >
-                                                    <button
-                                                        class="form__btn form__cancel"
-                                                        on:click={() =>
-                                                            (coin.isAddingBuy = false)}
-                                                        >Cancel</button
-                                                    >
-                                                </div>
-                                                <div
                                                     class="form__col col-6 col-md-8"
                                                 >
                                                     <input
@@ -1085,6 +1088,17 @@
                                                         value="Submit"
                                                         on:click={addBuy(coin)}
                                                     />
+                                                </div>
+                                                <div
+                                                    class="form__col col-6 col-md-4"
+                                                >
+                                                    <button
+                                                        class="form__btn form__cancel"
+                                                        on:click={() =>
+                                                            (coin.isAddingBuy = false)}
+                                                    >
+                                                        Cancel
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
@@ -1507,7 +1521,8 @@
                 }
             }
         }
-        &--btc, &--eth {
+        &--btc,
+        &--eth {
             border-top: none;
             order: -2 !important;
         }
@@ -1634,7 +1649,7 @@
         display: flex;
         justify-content: space-between;
         padding: 0 0.25rem;
-        &+& {
+        & + & {
             margin-top: 0.5rem;
         }
         &__col {
