@@ -50,7 +50,7 @@
         datasLoaded = false,
         datasSending = false,
         isSearchDatasLoaded = undefined,
-        stops1 = false,
+        stops1 = true,
         stops2 = false,
         isAddingCoin = false,
         isShowingSoldCoins = false,
@@ -690,7 +690,7 @@
                     >
                         <span>Gain</span>
                     </div>
-                    {#if !stops1 && !stops2}
+                    {#if !stops1 || !stops2}
                         <div
                             class="sort__col sort__bet sort"
                             data-sort="coin__bet"
@@ -781,7 +781,7 @@
                                         {coin.gains.on.toFixed(0)}
                                     </span>
                                 </div>
-                                {#if !stops1 && !stops2}
+                                {#if !stops1 || !stops2}
                                     <div class="coin__col coin__bet">
                                         <span>
                                             {coin.buysValue.toFixed(0)}
