@@ -333,6 +333,7 @@
             )
             .then((res) => {
                 isAddingCoin = false;
+                location.reload();
                 // getAdminDatas();
             })
             .catch((err) => {
@@ -378,6 +379,7 @@
             .then((res) => {
                 // coins = [...coins, res.]
                 coin.isEdited = false;
+                location.reload();
                 // getAdminDatas();
             })
             .catch((err) => {
@@ -410,6 +412,7 @@
             )
             .then((res) => {
                 coin.isAddingBuy = false;
+                location.reload();
                 // getAdminDatas();
             })
             .catch((err) => {
