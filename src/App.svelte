@@ -3,7 +3,7 @@
 </script>
 
 <template>
-    <div class="wrapper">
+    <div class="wrapper" id="listjs">
         <Coins />
     </div>
 </template>

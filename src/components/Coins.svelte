@@ -46,6 +46,7 @@
         datas = [],
         listObj,
         datasLoaded = false,
+        datasSending = false,
         isSearchDatasLoaded = undefined,
         stops1 = false,
         stops2 = false,
@@ -137,6 +138,8 @@
                                 "coin__gain",
                                 "coin__bet",
                             ],
+                            searchClass: 'listjs__search',
+                            // searchColumns: 'coin__symbol'
                         });
 
                         listObj.sort("coin__percent", {
@@ -286,6 +289,7 @@
 
     const editStops = async (coin, stopValue) => {
         // https://stackoverflow.com/questions/68799891/set-nested-property-of-json-object-using-brackets-notation-in-put-request-svelt
+        datasSending = true;
         let index = coins.indexOf(coin);
         await axios
             .put(
@@ -299,6 +303,7 @@
                 auth
             )
             .then((res) => {
+                datasSending = false;
                 coins[index].stops[stopValue] = res.data.stops[stopValue];
             })
             .catch((err) => {
@@ -308,6 +313,7 @@
     };
 
     const addCoin = async (coin) => {
+        datasSending = true;
         await axios
             .post(
                 `${baseUrl}/coins`,
@@ -333,6 +339,7 @@
             )
             .then((res) => {
                 isAddingCoin = false;
+                datasSending = false;
                 location.reload();
                 // getAdminDatas();
             })
@@ -343,6 +350,7 @@
     };
 
     const editCoin = async (coin) => {
+        datasSending = true;
         let index = coins.indexOf(coin);
         let buysBody = [];
         if (computeSold(coin.edit.buysAmount, coin.edit.sellAmount) === false) {
@@ -379,6 +387,7 @@
             .then((res) => {
                 // coins = [...coins, res.]
                 coin.isEdited = false;
+                datasSending = false;
                 location.reload();
                 // getAdminDatas();
             })
@@ -389,6 +398,7 @@
     };
 
     const addBuy = async (coin) => {
+        datasSending = true;
         await axios
             .put(
                 `${baseUrl}/coins/${coin.id}`,
@@ -412,6 +422,7 @@
             )
             .then((res) => {
                 coin.isAddingBuy = false;
+                datasSending = false;
                 location.reload();
                 // getAdminDatas();
             })
@@ -468,39 +479,42 @@
     <!-- IS LOGGED -->
     {#if isLogged}
         <!-- LOADER -->
-        {#if !datasLoaded}
+        {#if !datasLoaded || datasSending}
             <Loading />
         {/if}
         {#if datasLoaded}
             <!-- HEADER -->
             <header class="header">
-                <button
-                    class="button"
-                    class:active={stops1}
-                    on:click={() => (stops1 = !stops1)}
-                >
-                    -10 / +10
-                </button>
-                <button
-                    class="button"
-                    class:active={stops2}
-                    on:click={() => (stops2 = !stops2)}
-                >
-                    +20 / +30
-                </button>
-                <button
-                    class="button"
-                    class:active={isShowingSoldCoins}
-                    on:click={() => (isShowingSoldCoins = !isShowingSoldCoins)}
-                >
-                    Sold
-                </button>
-                <button class="button" on:click={() => (isAddingCoin = true)}>
-                    Add coin
-                </button>
+                <div class="header__inner">
+                    <button
+                        class="button"
+                        class:active={stops1}
+                        on:click={() => (stops1 = !stops1)}
+                    >
+                        -10 +10
+                    </button>
+                    <button
+                        class="button"
+                        class:active={stops2}
+                        on:click={() => (stops2 = !stops2)}
+                    >
+                        +20 +30
+                    </button>
+                    <button
+                        class="button"
+                        class:active={isShowingSoldCoins}
+                        on:click={() => (isShowingSoldCoins = !isShowingSoldCoins)}
+                    >
+                        Sold
+                    </button>
+                    <button class="button" on:click={() => (isAddingCoin = true)}>
+                        Add
+                    </button>
+                    <input type="search" class="form__input listjs__search" on:focus={() => isShowingSoldCoins = true} on:blur={() => isShowingSoldCoins = false}> 
+                </div>
             </header>
             <!-- MAIN -->
-            <main class="main" id="listjs">
+            <main class="main">
                 <!-- STATS -->
                 <div class="stats">
                     <div class="stats__col">
@@ -1331,14 +1345,15 @@
             }
         }
         &__btn {
-            cursor: pointer;
             width: 100%;
             padding: 0.75rem 1rem;
             border-radius: 0.25rem;
             border: 1px solid var(--bd);
-            // text-transform: uppercase;
             &:hover {
-                background: var(--bg3);
+                @media(hover: hover) {
+                    cursor: pointer;
+                    background: var(--bg3);
+                }
             }
         }
         &__btn--inline {
@@ -1350,7 +1365,9 @@
             // background: var(--bg3);
             background: none;
             &:hover {
-                background: none;
+                @media(hover: hover) {
+                    background: none;
+                }
             }
         }
         &__submit {
@@ -1367,8 +1384,12 @@
         position: relative;
         top: 2rem;
         height: calc(2.5rem + 2px);
-        cursor: pointer;
         user-select: none;
+        &:hover {
+            @media(hover: hover) {
+                cursor: pointer;
+            }
+        }
         &__label {
             position: absolute;
             top: -2rem;
@@ -1377,7 +1398,6 @@
         &__input {
             position: absolute;
             opacity: 0;
-            cursor: pointer;
             height: 0;
             width: 0;
         }
@@ -1407,15 +1427,26 @@
     }
 
     .header {
-        padding: 1rem;
         position: fixed;
         z-index: 10;
         width: 100%;
         left: 0;
         bottom: 0;
-        display: flex;
-        justify-content: center;
-        gap: 1rem;
+        &__inner {
+            max-width: calc(var(--max-width) + 1rem);
+            margin: 0 auto;
+            padding: 1rem 0.5rem;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 1rem;
+        }
+        .button {
+            white-space: nowrap;
+        }
+        .listjs__search {
+            padding: 0.5rem 0.75rem;
+        }
     }
 
     .main {
@@ -1440,7 +1471,14 @@
     }
 
     .sort {
-        cursor: pointer;
+        span {
+            &:hover {
+                @media(hover: hover) {
+                    cursor: pointer;
+                        background: var(--bg3);
+                }
+            }
+        }
         &__col {
             flex: none;
             text-align: right;
@@ -1503,11 +1541,13 @@
                 }
                 &.higher {
                     color: var(--comment);
+                    pointer-events: none;
                 }
                 &.selected.higher {
                     color: var(--red);
                     background: var(--darkred);
                     text-decoration: line-through;
+                    pointer-events: all;
                 }
                 &.advised:not(.selected):not(.higher) {
                     background: var(--bg2);
@@ -1515,12 +1555,15 @@
             }
         }
 
-        &__stop,
+        &__stop:not(.higher),
         &__symbol {
             span {
-                cursor: pointer;
                 &:hover {
-                    color: var(--comment);
+                    @media(hover: hover) {
+                        cursor: pointer;
+                        color: var(--fg);
+                        background: var(--bg3);
+                    }
                 }
             }
         }
@@ -1622,9 +1665,11 @@
             }
 
             &__name {
-                cursor: pointer;
                 &:hover {
-                    color: var(--comment);
+                    @media(hover: hover) {
+                        cursor: pointer;
+                        color: var(--comment);
+                    }
                 }
             }
         }
@@ -1637,8 +1682,10 @@
         background: var(--bg2);
         border: 1px solid var(--bd);
         &:hover {
-            cursor: pointer;
-            background: var(--bg3);
+            @media(hover: hover) {
+                cursor: pointer;
+                background: var(--bg3);
+            }
         }
         &.active {
             color: var(--blue);
