@@ -563,14 +563,14 @@
                         class:active={stops1}
                         on:click={() => (stops1 = !stops1)}
                     >
-                        -10 +10
+                        TP1
                     </button>
                     <button
                         class="button"
                         class:active={stops2}
                         on:click={() => (stops2 = !stops2)}
                     >
-                        +20 +30
+                        TP2
                     </button>
                     <button
                         class="button"
