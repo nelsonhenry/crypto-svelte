@@ -45,6 +45,8 @@
         },
         datas = [],
         listObj,
+        listjsSearchValue = '',
+        existingCoin = false,
         datasLoaded = false,
         datasSending = false,
         isSearchDatasLoaded = undefined,
@@ -264,12 +266,31 @@
             .then((res) => {
                 let datas = res.data;
                 for (var i = 0; i < datas.length; i++) {
-                    if (datas[i].symbol == post.symbol) {
+                    if (datas[i].symbol == post.symbol.toLowerCase()) {
                         searchCoins.push(datas[i]);
                     }
                 }
 
                 for (let coin of searchCoins) {
+                    if (stats.list.includes(coin.id)) {
+                        existingCoin = true;
+                        axios
+                            .get(`${baseUrl}/coins?name_eq=${coin.id}`, auth)
+                            .then(res => {
+                                if (res !== []) {
+                                    coin.marketCapRank = '✔';
+                                    post.id = res.data[0].id;
+                                    isSearchDatasLoaded = true;
+                                } else {
+                                    error.hasError = true;
+                                    error.datas = "datas: " + 'Coin not found';
+                                }
+                            })
+                    }
+                }
+
+                if (!existingCoin) {
+                    for (let coin of searchCoins) {
                     axios
                         .get(
                             `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coin.id}`
@@ -277,12 +298,14 @@
                         .then((res) => {
                             coin.image = smallImg(res.data[0].image);
                             coin.marketCapRank = res.data[0].market_cap_rank;
-                            isSearchDatasLoaded = true;
+                            // last coin reached
+                            if (coin === searchCoins[searchCoins.length - 1]) isSearchDatasLoaded = true;
                         })
                         .catch((err) => {
                             error.hasError = true;
                             error.datas = "datas: " + err.message;
                         });
+                    }
                 }
             });
     };
@@ -312,53 +335,101 @@
             });
     };
 
-    const addCoin = async (coin) => {
+    const addCoin = async () => {
         datasSending = true;
-        await axios
-            .post(
-                `${baseUrl}/coins`,
-                {
-                    name: post.name,
-                    symbol: post.symbol,
-                    sold: false,
-                    buys: [
+        if (existingCoin) {
+            await axios
+                .get(`${baseUrl}/coins/${post.id}`, auth)
+                .then((res) => {
+                    let coin = res.data;
+                    axios.put(
+                        `${baseUrl}/coins/${coin.id}`,
                         {
-                            amount: post.buyAmount,
-                            price: post.buyPrice,
+                            sold: false,
+                            buys: [
+                                ...coin.buys,
+                                {
+                                    amount: post.buyAmount,
+                                    price: post.buyPrice,
+                                },
+                            ],
+                            stops: {
+                                min10: true,
+                                max0: false,
+                                max10: false,
+                                max20: false,
+                                max30: false,
+                            },
                         },
-                    ],
-                    stops: {
-                        min10: true,
-                        max0: false,
-                        max10: false,
-                        max20: false,
-                        max30: false,
+                        auth
+                    )
+                    .then((res) => {
+                        coin.isAddingBuy = false;
+                        datasSending = false;
+                        location.reload();
+                        // getAdminDatas();
+                    })
+                    .catch((err) => {
+                        error.hasError = true;
+                        error.update = "Put: " + err;
+                    });
+                })
+        } else {
+            await axios
+                .post(
+                    `${baseUrl}/coins`,
+                    {
+                        name: post.name,
+                        symbol: post.symbol,
+                        sold: false,
+                        buys: [
+                            {
+                                amount: post.buyAmount,
+                                price: post.buyPrice,
+                            },
+                        ],
+                        stops: {
+                            min10: true,
+                            max0: false,
+                            max10: false,
+                            max20: false,
+                            max30: false,
+                        },
                     },
-                },
-                auth
-            )
-            .then((res) => {
-                isAddingCoin = false;
-                datasSending = false;
-                location.reload();
-                // getAdminDatas();
-            })
-            .catch((err) => {
-                error.hasError = true;
-                error.post = "Post: " + err;
-            });
+                    auth
+                )
+                .then((res) => {
+                    isAddingCoin = false;
+                    datasSending = false;
+                    location.reload();
+                    // getAdminDatas();
+                })
+                .catch((err) => {
+                    error.hasError = true;
+                    error.post = "Post: " + err;
+                });
+        }
     };
 
     const editCoin = async (coin) => {
         datasSending = true;
-        let index = coins.indexOf(coin);
-        let buysBody = [];
-        if (computeSold(coin.edit.buysAmount, coin.edit.sellAmount) === false) {
+        
+        let index = coins.indexOf(coin),
+            buysBody = [],
+            sellsBody = [...coin.sells,
+                {
+                    amount: coin.edit.sellAmount,
+                    price: coin.edit.sellPrice
+                }
+            ];
+
+        // IF is not sold
+        if (!computeSold(coin.edit.buysAmount, coin.edit.sellAmount)) {
             buysBody = [
                 {
                     amount: coin.edit.buysAmount - coin.edit.sellAmount,
                     price: coin.edit.buysPrice,
-                },
+                }
             ];
         }
 
@@ -371,6 +442,7 @@
                         coin.edit.sellAmount
                     ),
                     buys: buysBody,
+                    sells: sellsBody,
                     gains: [
                         ...coin.gains,
                         {
@@ -502,15 +574,28 @@
                     </button>
                     <button
                         class="button"
-                        class:active={isShowingSoldCoins}
-                        on:click={() => (isShowingSoldCoins = !isShowingSoldCoins)}
+                        class:active={isShowingSoldCoins || listjsSearchValue}
+                        on:click={() => {
+                            // isShowingSoldCoins = !isShowingSoldCoins;
+                            if (isShowingSoldCoins) {
+                                listObj.search();
+                                listjsSearchValue = '';
+                                isShowingSoldCoins = false
+                            } else {
+                                isShowingSoldCoins = true;
+                            }
+                        }}
                     >
                         Sold
                     </button>
                     <button class="button" on:click={() => (isAddingCoin = true)}>
                         Add
                     </button>
-                    <input type="search" class="form__input listjs__search" on:focus={() => isShowingSoldCoins = true} on:blur={() => isShowingSoldCoins = false}> 
+                    <input 
+                        type="search" 
+                        class="form__input listjs__search" 
+                        placeholder="Search"
+                        bind:value={listjsSearchValue} > 
                 </div>
             </header>
             <!-- MAIN -->
@@ -1021,7 +1106,7 @@
                         {#if coin.sold}
                             <div
                                 class="coin coin--{coin.symbol.toLowerCase()} coin--sold"
-                                class:hidden={!isShowingSoldCoins}
+                                class:hidden={!isShowingSoldCoins && !listjsSearchValue}
                             >
                                 {#if !stops1}
                                     <div class="coin__col coin__rank">
@@ -1250,7 +1335,7 @@
                                     class="form__btn form__submit"
                                     type="submit"
                                     value="Submit"
-                                    on:click={addCoin}
+                                    on:click={addCoin(post)}
                                 />
                             </div>
                             <div class="form__col col-6 col-md-4">
