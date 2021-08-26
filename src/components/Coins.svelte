@@ -260,6 +260,7 @@
     const searchCoin = async () => {
         if (!post.symbol) return;
         searchCoins = [];
+        existingCoin = false;
         isSearchDatasLoaded = false;
         await axios
             .get(`https://api.coingecko.com/api/v3/coins/list`)
@@ -278,9 +279,23 @@
                             .get(`${baseUrl}/coins?name_eq=${coin.id}`, auth)
                             .then(res => {
                                 if (res !== []) {
-                                    coin.marketCapRank = '✔';
+                                    coin.existing = '☑️';
                                     post.id = res.data[0].id;
-                                    isSearchDatasLoaded = true;
+
+                                    axios
+                                        .get(
+                                            `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coin.id}`
+                                        )
+                                        .then((res) => {
+                                            coin.image = smallImg(res.data[0].image);
+                                            coin.marketCapRank = res.data[0].market_cap_rank;
+                                            isSearchDatasLoaded = true;
+                                        })
+                                        .catch((err) => {
+                                            error.hasError = true;
+                                            error.datas = "datas: " + err.message;
+                                        });
+                                    
                                 } else {
                                     error.hasError = true;
                                     error.datas = "datas: " + 'Coin not found';
@@ -951,7 +966,7 @@
                                             </div>
                                             <!-- Sell -->
                                             <div class="form__row">
-                                                <div class="form__col col-4">
+                                                <div class="form__col col-4" style="position:relative;">
                                                     <label
                                                         for=""
                                                         class="form__label"
@@ -964,6 +979,11 @@
                                                         bind:value={coin.edit
                                                             .sellAmount}
                                                     />
+                                                    <button
+                                                        class="form__btn form__btn--inline"
+                                                        style="position: absolute; right: 0; bottom: 0; width: auto;"
+                                                        on:click={() => coin.edit.sellAmount = coin.edit.sellAmount / 2}
+                                                        >1/2</button>
                                                 </div>
                                                 <div class="form__col col-4">
                                                     <label
@@ -1253,7 +1273,11 @@
                                 <div class="form__col col-12">
                                     <div class="search-coins">
                                         {#each searchCoins as coin}
-                                            <div class="search-coin">
+                                            <div class="search-coin" on:click={() =>
+                                                        (post.name = coin.id)}>
+                                                <div class="search-coin__col search-coin__existing">
+                                                    {coin.existing ? coin.existing : ''}
+                                                </div>
                                                 <div
                                                     class="search-coin__col search-coin__image"
                                                 >
@@ -1278,8 +1302,6 @@
                                                 </div>
                                                 <div
                                                     class="search-coin__col search-coin__name"
-                                                    on:click={() =>
-                                                        (post.name = coin.id)}
                                                 >
                                                     {coin.id}
                                                 </div>
@@ -1726,6 +1748,13 @@
                 gap: 1ch;
             }
 
+            &:hover {
+                @media(hover: hover) {
+                    cursor: pointer;
+                    color: var(--comment);
+                }
+            }
+
             &__image {
                 width: 1.25rem;
                 min-width: 1.25rem;
@@ -1734,6 +1763,12 @@
                 img {
                     height: 100%;
                 }
+            }
+
+            &__existing {
+                flex: none;
+                width: 2ch;
+                min-width: 2ch;
             }
 
             &__rank {
@@ -1746,15 +1781,6 @@
                 flex: none;
                 width: 6ch;
                 min-width: 6ch;
-            }
-
-            &__name {
-                &:hover {
-                    @media(hover: hover) {
-                        cursor: pointer;
-                        color: var(--comment);
-                    }
-                }
             }
         }
     }

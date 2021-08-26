@@ -1,5 +1,5 @@
 @import "../styles/_include-media";
-$breakpoints: ( xxs: 320px, xs: 480px, sm: 768px, md: 1024px, lg: 1280px, xl: 1440px, xxl: 1920px, );
+$breakpoints: ( xxs: 320px, xs: 480px, sm: 768px, md: 1024px, lg: 1280px, xl: 1440px, xxl: 1920px);
 :root {
     --salmon: #e0a080;
     --max-width: 800px;
@@ -166,4 +166,8 @@ $breakpoints: ( xxs: 320px, xs: 480px, sm: 768px, md: 1024px, lg: 1280px, xl: 14
     @include media(">=md") {
         grid-column: span 12;
     }
+}
+
+.hidden {
+    display: none !important;
 }
