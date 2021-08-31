@@ -14,10 +14,12 @@
     } from "../js/helpers";
 
     let baseUrl = "https://crypto-svelte.herokuapp.com",
+        apiUrl = "https://api.coingecko.com/api/v3/coins",
         isLogged = false,
         loginEmail,
         loginPw,
         coins = [],
+        detailCoin = {},
         post = {},
         stats = {
             list: [],
@@ -52,6 +54,7 @@
         isSearchDatasLoaded = undefined,
         stops1 = true,
         stops2 = false,
+        isDetailCoin = false,
         isAddingCoin = false,
         isShowingSoldCoins = false,
         searchCoins = [],
@@ -60,42 +63,6 @@
         },
         auth;
 
-    const resetVars = () => {
-        coins = [];
-        post = {};
-        stats = {
-            list: [],
-            funds: {
-                onList: [],
-                offList: [],
-                on: 0,
-                off: 0,
-            },
-            buys: {
-                amountList: [],
-                amount: 0,
-            },
-            gains: {
-                onList: [],
-                offList: [],
-                on: 0,
-                off: {
-                    q1: 1606.786106,
-                    q2: 0,
-                },
-            },
-        };
-        datas = [];
-        listObj;
-        datasLoaded = false;
-        isSearchDatasLoaded = undefined;
-        isAddingCoin = false;
-        isShowingSoldCoins = false;
-        searchCoins = [];
-        error = {
-            hasError: false,
-        };
-    };
 
     const getAdminDatas = async () => {
         await axios
@@ -109,7 +76,7 @@
                 // get coingecko datas
                 axios
                     .get(
-                        `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${stats.list.join(
+                        `${apiUrl}/markets?vs_currency=usd&ids=${stats.list.join(
                             ","
                         )}`
                     )
@@ -141,7 +108,6 @@
                                 "coin__bet",
                             ],
                             searchClass: 'listjs__search',
-                            // searchColumns: 'coin__symbol'
                         });
 
                         listObj.sort("coin__percent", {
@@ -197,8 +163,9 @@
     };
 
     const setCoinProps = (coin) => {
-        // list
         stats.list.push(coin.name);
+        coin.isEdited = false;
+        coin.isAddingBuy = false;
 
         if (!coin.sold) {
             coin.buysValueList = [];
@@ -233,7 +200,6 @@
             stats.maxLoose = sumArray(stats.maxLooseList);
         }
 
-        // gains off + stats gains off
         for (let gain of coin.gains) {
             stats.gains.offList.push(gain.amount);
         }
@@ -253,8 +219,6 @@
             stats.gains.onList.push(coin.gains.on);
         }
         coin.marketCapRank = data.market_cap_rank;
-        coin.isEdited = false;
-        coin.isAddingBuy = false;
     };
 
     const searchCoin = async () => {
@@ -263,7 +227,7 @@
         existingCoin = false;
         isSearchDatasLoaded = false;
         await axios
-            .get(`https://api.coingecko.com/api/v3/coins/list`)
+            .get(`${apiUrl}/list`)
             .then((res) => {
                 let datas = res.data;
                 for (var i = 0; i < datas.length; i++) {
@@ -284,7 +248,7 @@
 
                                     axios
                                         .get(
-                                            `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coin.id}`
+                                            `${apiUrl}/markets?vs_currency=usd&ids=${coin.id}`
                                         )
                                         .then((res) => {
                                             coin.image = smallImg(res.data[0].image);
@@ -308,7 +272,7 @@
                     for (let coin of searchCoins) {
                     axios
                         .get(
-                            `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coin.id}`
+                            `${apiUrl}/markets?vs_currency=usd&ids=${coin.id}`
                         )
                         .then((res) => {
                             coin.image = smallImg(res.data[0].image);
@@ -511,12 +475,34 @@
                 coin.isAddingBuy = false;
                 datasSending = false;
                 location.reload();
-                // getAdminDatas();
             })
             .catch((err) => {
                 error.hasError = true;
                 error.update = "Put: " + err;
             });
+    };
+
+    const getCoinDetails = async (coin) => {
+        datasSending = true;
+        await axios
+        .get(`${apiUrl}/markets?vs_currency=usd&ids=${coin.name}`)
+        .then(res => {
+            let data = res.data[0];
+            console.log(data)
+            detailCoin.name = coin.name;
+            detailCoin.symbol = coin.symbol;
+            detailCoin.image = data.image;
+            detailCoin.ath = data.ath;
+            detailCoin.currentPrice = data.current_price;
+            detailCoin.marketCapRank = data.market_cap_rank;
+            detailCoin.athPercent = percentChange(detailCoin.ath, detailCoin.currentPrice)
+            datasSending = false;
+            isDetailCoin = true;
+        })
+        .catch(err => {
+            error.hasError = true;
+            error.datas = 'datas:' + err.message
+        })
     };
 </script>
 
@@ -578,14 +564,14 @@
                         class:active={stops1}
                         on:click={() => (stops1 = !stops1)}
                     >
-                        TP1
+                        T1
                     </button>
                     <button
                         class="button"
                         class:active={stops2}
                         on:click={() => (stops2 = !stops2)}
                     >
-                        TP2
+                        T2
                     </button>
                     <button
                         class="button"
@@ -696,46 +682,38 @@
                         class="sort__col sort__percent24h sort"
                         data-sort="coin__percent24h"
                     >
-                        <span>24h</span>
+                        <span>%D</span>
                     </div>
                     <div
                         class="sort__col sort__gain sort"
                         data-sort="coin__gain"
                     >
-                        <span>Gain</span>
+                        <span>PRF</span>
                     </div>
-                    {#if !stops1 || !stops2}
-                        <div
-                            class="sort__col sort__bet sort"
-                            data-sort="coin__bet"
-                        >
-                            <span>Bet</span>
-                        </div>
-                    {/if}
+                    <div
+                        class="sort__col sort__bet sort"
+                        data-sort="coin__bet"
+                    >
+                        <span>Bet</span>
+                    </div>
                     <div class="sort__col sort__now">
                         <span>Now</span>
                     </div>
-                    {#if stops1}
-                        <div class="sort__col sort__stop">
-                            <span>-10</span>
-                        </div>
-                    {/if}
-                    <div class="sort__col sort__old sort__stop">
-                        <span>+0</span>
+                    <div class="sort__col sort__stop" class:collapsed={!stops1}>
+                        <span>L1</span>
                     </div>
-                    {#if stops1}
-                        <div class="sort__col sort__stop">
-                            <span>+10</span>
-                        </div>
-                    {/if}
-                    {#if stops2}
-                        <div class="sort__col sort__stop">
-                            <span>+20</span>
-                        </div>
-                        <div class="sort__col sort__stop">
-                            <span>+30</span>
-                        </div>
-                    {/if}
+                    <div class="sort__col sort__old sort__stop" class:collapsed={!stops1}>
+                        <span>T0</span>
+                    </div>
+                    <div class="sort__col sort__stop" class:collapsed={!stops1}>
+                        <span>T1</span>
+                    </div>
+                    <div class="sort__col sort__stop" class:collapsed={!stops2}>
+                        <span>T2</span>
+                    </div>
+                    <div class="sort__col sort__stop" class:collapsed={!stops2}>
+                        <span>T3</span>
+                    </div>
                 </div>
                 <!-- COINS -->
                 <div class="coins list">
@@ -756,9 +734,14 @@
                                     class="coin__col coin__symbol"
                                     on:click={() => (coin.isEdited = true)}
                                 >
-                                    <span>{coin.symbol.toUpperCase()}</span>
+                                    <span>
+                                        {coin.symbol.toUpperCase()}
+                                    </span>
                                 </div>
-                                <div class="coin__col coin__percent">
+                                <div 
+                                    class="coin__col coin__percent"
+                                    on:click={getCoinDetails(coin)}
+                                >
                                     <span style="display: none">
                                         {coin.percentChange + 100}
                                     </span>
@@ -795,34 +778,34 @@
                                         {coin.gains.on.toFixed(0)}
                                     </span>
                                 </div>
-                                {#if !stops1 || !stops2}
-                                    <div class="coin__col coin__bet">
-                                        <span>
-                                            {coin.buysValue.toFixed(0)}
-                                        </span>
-                                    </div>
-                                {/if}
+                                <div class="coin__col coin__bet">
+                                    <span>
+                                        {coin.buysValue.toFixed(0)}
+                                    </span>
+                                </div>
                                 <div class="coin__col coin__now">
                                     <span>
                                         {fixed(coin.currentPrice)}
                                     </span>
                                 </div>
-                                {#if stops1}
-                                    <div class="coin__col coin__stop">
-                                        <span
-                                            on:click={editStops(coin, "min10")}
-                                            class:selected={coin.stops &&
+                                <div class="coin__col coin__stop" class:collapsed={!stops1}>
+                                    <span
+                                    on:click={editStops(coin, "min10")}
+                                    class:selected={coin.stops &&
                                                 coin.stops.min10}
                                             class:higher={coin.percentChange <
                                                 -10}
                                             class:advised={coin.percentChange >
                                                 -10 && coin.percentChange < 10}
                                         >
+                                            {#if stops1}
                                             {fixed(coin.buysPrice * 0.9)}
+                                            {:else}
+                                            &nbsp;
+                                            {/if}
                                         </span>
                                     </div>
-                                {/if}
-                                <div class="coin__col coin__old coin__stop">
+                                <div class="coin__col coin__old coin__stop" class:collapsed={!stops1}>
                                     <span
                                         on:click={editStops(coin, "max0")}
                                         class:selected={coin.stops &&
@@ -831,11 +814,14 @@
                                         class:advised={coin.percentChange >=
                                             10 && coin.percentChange < 20}
                                     >
+                                        {#if stops1}
                                         {fixed(coin.buysPrice)}
+                                        {:else}
+                                        &nbsp;
+                                        {/if}
                                     </span>
                                 </div>
-                                {#if stops1}
-                                    <div class="coin__col coin__stop">
+                                    <div class="coin__col coin__stop" class:collapsed={!stops1}>
                                         <span
                                             on:click={editStops(coin, "max10")}
                                             class:selected={coin.stops &&
@@ -845,25 +831,31 @@
                                             class:advised={coin.percentChange >=
                                                 20 && coin.percentChange < 30}
                                         >
-                                            {fixed(coin.buysPrice * 1.1)}
+                                        {#if stops1}
+                                        {fixed(coin.buysPrice * 1.1)}
+                                        {:else}
+                                        &nbsp;
+                                        {/if}
                                         </span>
                                     </div>
-                                {/if}
-                                {#if stops2}
-                                    <div class="coin__col coin__stop">
+                                    <div class="coin__col coin__stop" class:collapsed={!stops2}>
                                         <span
-                                            on:click={editStops(coin, "max20")}
-                                            class:selected={coin.stops &&
-                                                coin.stops.max20}
+                                        on:click={editStops(coin, "max20")}
+                                        class:selected={coin.stops &&
+                                            coin.stops.max20}
                                             class:higher={coin.percentChange <
                                                 20}
                                             class:advised={coin.percentChange >=
-                                                30 && coin.percentChange < 40}
+                                                30 && coin.percentChange     < 40}
                                         >
-                                            {fixed(coin.buysPrice * 1.2)}
+                                        {#if stops2}
+                                        {fixed(coin.buysPrice * 1.2)}
+                                        {:else}
+                                        &nbsp;
+                                        {/if}
                                         </span>
                                     </div>
-                                    <div class="coin__col coin__stop">
+                                    <div class="coin__col coin__stop" class:collapsed={!stops2}>
                                         <span
                                             on:click={editStops(coin, "max30")}
                                             class:selected={coin.stops &&
@@ -873,10 +865,13 @@
                                             class:advised={coin.percentChange >=
                                                 40 && coin.percentChange < 50}
                                         >
-                                            {fixed(coin.buysPrice * 1.3)}
+                                        {#if stops2}
+                                        {fixed(coin.buysPrice * 1.3)}
+                                        {:else}
+                                        &nbsp;
+                                        {/if}
                                         </span>
                                     </div>
-                                {/if}
 
                                 <!-- COIN EDIT -->
                                 {#if coin.isEdited}
@@ -1120,6 +1115,7 @@
                                     </div>
                                 {/if}
                             </div>
+                             
                         {/if}
                         <!-- COINS SOLD -->
                         {#if coin.sold}
@@ -1229,6 +1225,24 @@
                         {/if}
                     {/each}
                 </div>
+                <!-- COIN DETAILS -->
+                {#if isDetailCoin}
+                <div class="detail">
+                    <div class="detail__section">
+                        <button class="button" on:click={() => isDetailCoin = false}>Close</button>
+                        <div class="detail__row">
+                            <div class="detail__image">
+                                <img src="{detailCoin.image}" alt="{detailCoin.symbol} logo">
+                            </div>
+                            <span class="detail__rank">{detailCoin.marketCapRank}</span>&nbsp;<span class="detail__symbol">{detailCoin.symbol}</span>&nbsp;(<span class="detail__name">{detailCoin.name}</span>)
+                        </div>
+                        <div class="detail__prices">
+                            <div class="detail__ath">{detailCoin.ath}</div>
+                            <div class="detail__current">{detailCoin.currentPrice} ({detailCoin.athPercent.toFixed(1)}%)</div>
+                        </div>
+                    </div>
+                </div>
+                {/if}
             </main>
             <!-- ADD COIN -->
             {#if isAddingCoin}
@@ -1394,6 +1408,26 @@
         xl: 1440px,
         xxl: 1920px,
     );
+
+    .detail {
+        position: fixed;
+        z-index: 11;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        overflow-y: auto;
+        background: var(--bg);
+        &__section {
+            width: 100%;
+            margin: auto;
+            max-width: calc(var(--max-width) + 2rem);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+    }
 
     .form {
         position: fixed;
@@ -1703,12 +1737,12 @@
                 margin-left: -0.25rem;
             }
         }
+        &__gain,
         &__rank {
             flex: none;
             min-width: 4ch;
             width: 4ch;
         }
-        &__gain,
         &__bet {
             flex: none;
             min-width: 5ch;
@@ -1718,15 +1752,20 @@
         &__percent,
         &__percent24h {
             flex: none;
-            min-width: 6ch;
-            width: 6ch;
+            min-width: 5ch;
+            width: 5ch;
         }
         &__now,
         &__old,
         &__stop {
             flex: 1;
-            min-width: 5ch;
-            width: 5ch;
+            min-width: 6ch;
+            width: 6ch;
+            &.collapsed {
+                width: 2ch;
+                min-width: 2ch;
+                            
+        }
         }
     }
 
