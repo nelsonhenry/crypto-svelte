@@ -918,7 +918,7 @@
                                                     </label>
                                                     <input
                                                         class="form__input"
-                                                        type="text"
+                                                        type="number"
                                                         bind:value={coin.edit
                                                             .buysAmount}
                                                     />
@@ -932,7 +932,7 @@
                                                     </label>
                                                     <input
                                                         class="form__input"
-                                                        type="text"
+                                                        type="number"
                                                         bind:value={coin.edit
                                                             .buysPrice}
                                                     />
@@ -946,7 +946,7 @@
                                                     </label>
                                                     <input
                                                         class="form__input"
-                                                        type="text"
+                                                        type="number"
                                                         readonly
                                                         value={coin.edit
                                                             .buysAmount &&
@@ -970,7 +970,7 @@
                                                     </label>
                                                     <input
                                                         class="form__input"
-                                                        type="text"
+                                                        type="number"
                                                         bind:value={coin.edit
                                                             .sellAmount}
                                                     />
@@ -989,7 +989,7 @@
                                                     </label>
                                                     <input
                                                         class="form__input"
-                                                        type="text"
+                                                        type="number"
                                                         bind:value={coin.edit
                                                             .sellPrice}
                                                     />
@@ -1002,7 +1002,7 @@
                                                     >
                                                     <input
                                                         class="form__input"
-                                                        type="text"
+                                                        type="number"
                                                         readonly
                                                         value={coin.edit
                                                             .sellAmount &&
@@ -1026,7 +1026,7 @@
                                                     </label>
                                                     <input
                                                         class="form__input"
-                                                        type="text"
+                                                        type="number"
                                                         readonly
                                                         value={computeAmount(
                                                             coin.edit
@@ -1045,7 +1045,7 @@
                                                     <input
                                                         id="coin-gain"
                                                         class="form__input"
-                                                        type="text"
+                                                        type="number"
                                                         readonly
                                                         value={computeGains(
                                                             coin.edit.buysPrice,
@@ -1158,7 +1158,7 @@
                                                     </label>
                                                     <input
                                                         class="form__input"
-                                                        type="text"
+                                                        type="number"
                                                         bind:value={coin.addBuyAmount}
                                                     />
                                                 </div>
@@ -1171,7 +1171,7 @@
                                                     </label>
                                                     <input
                                                         class="form__input"
-                                                        type="text"
+                                                        type="number"
                                                         bind:value={coin.addBuyPrice}
                                                     />
                                                 </div>
@@ -1182,7 +1182,7 @@
                                                     >
                                                     <input
                                                         class="form__input"
-                                                        type="text"
+                                                        type="number"
                                                         readonly
                                                         value={coin.addBuyAmount &&
                                                         coin.addBuyPrice
