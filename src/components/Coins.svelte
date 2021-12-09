@@ -52,7 +52,7 @@
         datasLoaded = false,
         datasSending = false,
         isSearchDatasLoaded = undefined,
-        stops1 = true,
+        stops1 = false,
         stops2 = false,
         isDetailCoin = false,
         isAddingCoin = false,
@@ -1655,6 +1655,14 @@
             text-align: right;
             &.hidden {
                 display: none;
+            }
+            &.collapsed {
+                span.selected {
+                    background: var(--midblue);
+                }
+                span.advised:not(.selected):not(.higher) {
+                    background: var(--bg3);
+                }
             }
             span {
                 &.pos {
