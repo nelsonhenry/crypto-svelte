@@ -44,9 +44,23 @@ $breakpoints: ( xxs: 320px, xs: 480px, sm: 768px, md: 1024px, lg: 1280px, xl: 14
 }
 
 @font-face {
-    font-family: "Recursive Variable";
-    src: url("../fonts/recursive.ttf") format(truetype);
+    font-family: "Fira Code";
+    src: url("../fonts/FiraCode-Regular.woff2") format(woff2);
+    font-weight: normal;
+    font-style: normal;
 }
+
+@font-face {
+    font-family: "Fira Code";
+    src: url("../fonts/FiraCode-Bold.woff2") format(woff2);
+    font-weight: bold;
+    font-style: normal;
+}
+
+// @font-face {
+//     font-family: "Recursive Variable";
+//     src: url("../fonts/recursive.ttf") format(truetype);
+// }
 
 .col-1 {
     grid-column: span 1;

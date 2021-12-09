@@ -1465,7 +1465,7 @@
         }
         &__label {
             display: block;
-            font-size: 0.875rem;
+            font-size: 1rem;
             // text-transform: uppercase;
             color: var(--comment);
             margin-bottom: 0.75rem;
