@@ -63,7 +63,6 @@
         },
         auth;
 
-
     const getAdminDatas = async () => {
         await axios
             .get(`${baseUrl}/coins`, auth)
@@ -90,7 +89,7 @@
                             setCoinApiProps(coin, data);
                         });
 
-                        stats.funds.off = 18670;
+                        stats.funds.off = 18670 - 5419.75 - 2600 - 1083,95 - 1000;
                         stats.funds.on = sumArray(stats.funds.onList);
                         stats.gains.on = sumArray(stats.gains.onList);
                         stats.gains.off.q2 = sumArray(stats.gains.offList);
@@ -137,8 +136,6 @@
         }
     };
 
-    checkIfLogged();
-
     const login = async () => {
         await axios
             .post(`${baseUrl}/auth/local`, {
@@ -182,18 +179,17 @@
                 sumArray(coin.buysValueList) / sumArray(coin.buysAmountList);
 
             coin.edit = {
-                buysAmount: coin.buysAmount,
+                buysAmount: coin.buysAmount.toFixed(4),
                 buysPrice: coin.buysPrice,
                 buysValue: coin.buysValue,
-                sellAmount: coin.buysAmount,
+                sellAmount: coin.buysAmount.toFixed(4),
                 sellPrice: coin.buysPrice,
                 sellValue: coin.buysValue,
             };
 
             stats.funds.onList.push(coin.buysValue);
 
-            if (coin.stops.min10)
-                stats.maxLooseList.push(coin.buysValue * -0.1);
+            if (coin.stops.min10) stats.maxLooseList.push(coin.buysValue * -0.1);
             if (coin.stops.max10) stats.maxLooseList.push(coin.buysValue * 0.1);
             if (coin.stops.max20) stats.maxLooseList.push(coin.buysValue * 0.2);
             if (coin.stops.max30) stats.maxLooseList.push(coin.buysValue * 0.3);
@@ -203,6 +199,7 @@
         for (let gain of coin.gains) {
             stats.gains.offList.push(gain.amount);
         }
+        
         coin.gains.off = sumProps(coin.gains, "amount");
     };
 
@@ -504,6 +501,8 @@
             error.datas = 'datas:' + err.message
         })
     };
+
+    checkIfLogged();
 </script>
 
 <template>
@@ -632,7 +631,7 @@
                         >
                             {stats.gains.off.q1 + stats.gains.off.q2 >= 0
                                 ? "+"
-                                : "-"}{(stats.gains.off.q1 + stats.gains.off.q2).toFixed(
+                                : ""}{(stats.gains.off.q1 + stats.gains.off.q2).toFixed(
                                 0
                             )}
                         </span>
@@ -690,12 +689,14 @@
                     >
                         <span>PRF</span>
                     </div>
+                    {#if !stops1 && !stops2}
                     <div
                         class="sort__col sort__bet sort"
                         data-sort="coin__bet"
                     >
                         <span>Bet</span>
                     </div>
+                    {/if}
                     <div class="sort__col sort__now">
                         <span>Now</span>
                     </div>
@@ -755,7 +756,7 @@
                                             ? 'stop'
                                             : ''}"
                                     >
-                                        {coin.percentChange.toFixed(1)}
+                                        {coin.percentChange.toFixed(1).replace('-', '')}
                                     </span>
                                 </div>
                                 <div class="coin__col coin__percent24h">
@@ -767,7 +768,7 @@
                                             ? "pos"
                                             : "neg"}
                                     >
-                                        {coin.percentChange24h.toFixed(1)}
+                                        {coin.percentChange24h.toFixed(1).replace('-', '')}
                                     </span>
                                 </div>
                                 <div class="coin__col coin__gain">
@@ -778,11 +779,13 @@
                                         {coin.gains.on.toFixed(0)}
                                     </span>
                                 </div>
+                                {#if !stops1 && !stops2}
                                 <div class="coin__col coin__bet">
                                     <span>
-                                        {coin.buysValue.toFixed(0)}
+                                        {(coin.buysValue / 100).toFixed(0)}
                                     </span>
                                 </div>
+                                {/if}
                                 <div class="coin__col coin__now">
                                     <span>
                                         {fixed(coin.currentPrice)}
@@ -889,7 +892,7 @@
                                                     <input
                                                         id="coin-symbol"
                                                         class="form__input"
-                                                        value={coin.symbol}
+                                                        value={coin.symbol.toUpperCase()}
                                                         type="text"
                                                     />
                                                 </div>
@@ -923,7 +926,7 @@
                                                             .buysAmount}
                                                     />
                                                 </div>
-                                                <div class="form__col col-4">
+                                                <div class="form__col col-5">
                                                     <label
                                                         for=""
                                                         class="form__label"
@@ -937,7 +940,7 @@
                                                             .buysPrice}
                                                     />
                                                 </div>
-                                                <div class="form__col col-4">
+                                                <div class="form__col col-3">
                                                     <label
                                                         class="form__label"
                                                         for=""
@@ -951,10 +954,10 @@
                                                         value={coin.edit
                                                             .buysAmount &&
                                                         coin.buysPrice
-                                                            ? coin.edit
+                                                            ? (coin.edit
                                                                   .buysAmount *
                                                               coin.edit
-                                                                  .buysPrice
+                                                                  .buysPrice).toFixed(2)
                                                             : 0}
                                                     />
                                                 </div>
@@ -980,7 +983,7 @@
                                                         on:click={() => coin.edit.sellAmount = coin.edit.sellAmount / 2}
                                                         >1/2</button>
                                                 </div>
-                                                <div class="form__col col-4">
+                                                <div class="form__col col-5">
                                                     <label
                                                         for=""
                                                         class="form__label"
@@ -994,7 +997,7 @@
                                                             .sellPrice}
                                                     />
                                                 </div>
-                                                <div class="form__col col-4">
+                                                <div class="form__col col-3">
                                                     <label
                                                         for=""
                                                         class="form__label"
@@ -1007,10 +1010,10 @@
                                                         value={coin.edit
                                                             .sellAmount &&
                                                         coin.edit.sellPrice
-                                                            ? coin.edit
+                                                            ? (coin.edit
                                                                   .sellAmount *
                                                               coin.edit
-                                                                  .sellPrice
+                                                                  .sellPrice).toFixed(2)
                                                             : 0}
                                                     />
                                                 </div>
@@ -1022,7 +1025,7 @@
                                                         for=""
                                                         class="form__label"
                                                     >
-                                                        Remaining amount
+                                                        Remaining
                                                     </label>
                                                     <input
                                                         class="form__input"
@@ -1035,7 +1038,7 @@
                                                         )}
                                                     />
                                                 </div>
-                                                <div class="form__col col-4">
+                                                <div class="form__col col-5">
                                                     <label
                                                         for="coin-gain"
                                                         class="form__label"
@@ -1054,7 +1057,7 @@
                                                         )}
                                                     />
                                                 </div>
-                                                <div class="form__col col-4">
+                                                <div class="form__col col-3">
                                                     <label
                                                         class="checkbox"
                                                         for="coin-sold"
@@ -1115,7 +1118,6 @@
                                     </div>
                                 {/if}
                             </div>
-                             
                         {/if}
                         <!-- COINS SOLD -->
                         {#if coin.sold}
@@ -1187,7 +1189,7 @@
                                                         value={coin.addBuyAmount &&
                                                         coin.addBuyPrice
                                                             ? coin.addBuyAmount *
-                                                              coin.addBuyPrice
+                                                                coin.addBuyPrice
                                                             : 0}
                                                     />
                                                 </div>
@@ -1283,50 +1285,52 @@
                                     type="text"
                                 />
                             </div>
-                            {#if isSearchDatasLoaded}
-                                <div class="form__col col-12">
-                                    <div class="search-coins">
-                                        {#each searchCoins as coin}
-                                            <div class="search-coin" on:click={() =>
-                                                        (post.name = coin.id)}>
-                                                <div class="search-coin__col search-coin__existing">
-                                                    {coin.existing ? coin.existing : ''}
-                                                </div>
-                                                <div
-                                                    class="search-coin__col search-coin__image"
-                                                >
-                                                    {#if coin.image}
-                                                        <img
-                                                            src={coin.image}
-                                                            alt="coin logo"
-                                                        />
-                                                    {/if}
-                                                </div>
-                                                <div
-                                                    class="search-coin__col search-coin__rank"
-                                                >
-                                                    {coin.marketCapRank
-                                                        ? coin.marketCapRank
-                                                        : "/"}
-                                                </div>
-                                                <div
-                                                    class="search-coin__col search-coin__symbol"
-                                                >
-                                                    {coin.symbol.toUpperCase()}
-                                                </div>
-                                                <div
-                                                    class="search-coin__col search-coin__name"
-                                                >
-                                                    {coin.id}
-                                                </div>
-                                            </div>
-                                        {/each}
-                                    </div>
-                                </div>
-                            {:else if isSearchDatasLoaded === false}
-                                <Loading />
-                            {/if}
                         </div>
+                        {#if isSearchDatasLoaded}
+                        <div class="form__row">
+                            <div class="form__col col-12">
+                                <div class="search-coins">
+                                    {#each searchCoins as coin}
+                                        <div class="search-coin" on:click={() =>
+                                                    (post.name = coin.id)}>
+                                            <div class="search-coin__col search-coin__existing">
+                                                {coin.existing ? coin.existing : ''}
+                                            </div>
+                                            <div
+                                                class="search-coin__col search-coin__image"
+                                            >
+                                                {#if coin.image}
+                                                    <img
+                                                        src={coin.image}
+                                                        alt="coin logo"
+                                                    />
+                                                {/if}
+                                            </div>
+                                            <div
+                                                class="search-coin__col search-coin__rank"
+                                            >
+                                                {coin.marketCapRank
+                                                    ? coin.marketCapRank
+                                                    : "/"}
+                                            </div>
+                                            <div
+                                                class="search-coin__col search-coin__symbol"
+                                            >
+                                                {coin.symbol.toUpperCase()}
+                                            </div>
+                                            <div
+                                                class="search-coin__col search-coin__name"
+                                            >
+                                                {coin.id}
+                                            </div>
+                                        </div>
+                                    {/each}
+                                </div>
+                            </div>
+                        </div>
+                        {:else if isSearchDatasLoaded === false}
+                            <Loading />
+                        {/if}
                         <div class="form__row">
                             <div class="form__col col-4">
                                 <label for="add-coin-amount" class="form__label"
@@ -1455,7 +1459,7 @@
             // border: 1px solid var(--bg3);
             display: grid;
             grid-template-columns: repeat(12, 1fr);
-            gap: 1.5rem;
+            gap: 1.5rem 0;
             &--no-border {
                 padding: 0;
                 border-radius: 0;
@@ -1465,8 +1469,10 @@
         }
         &__label {
             display: block;
-            font-size: 1rem;
-            // text-transform: uppercase;
+            font-size: 0.75rem;
+            line-height: 1.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
             color: var(--comment);
             margin-bottom: 0.75rem;
         }
@@ -1474,9 +1480,9 @@
             width: 100%;
             // border: 1px solid var(--bg3);
             border: 1px solid var(--bd);
-            border-radius: 0.25rem;
+            // border-radius: 0.25rem;
             // line-height: 1.5;
-            padding: 0.75rem;
+            padding: 1rem 0.75rem;
             background: var(--bg);
             &:focus {
                 outline: none;
@@ -1486,8 +1492,8 @@
         }
         &__btn {
             width: 100%;
-            padding: 0.75rem 1rem;
-            border-radius: 0.25rem;
+            padding: 1rem;
+            // border-radius: 0.25rem;
             border: 1px solid var(--bd);
             &:hover {
                 @media(hover: hover) {
@@ -1497,7 +1503,7 @@
             }
         }
         &__btn--inline {
-            padding: 0.25rem 0.75rem;
+            padding: 0.5rem 0.75rem;
             margin-bottom: 0.5rem;
             font-size: 0.875rem;
             line-height: 1.25rem;
@@ -1513,6 +1519,17 @@
         &__submit {
             background: var(--bg2);
         }
+        &__col:not(:last-child) &__input, &__col:not(:last-child) &__btn {
+            border-right: none;
+        }
+        &__col:first-child &__input, &__col:first-child &__btn {
+            border-top-left-radius: 0.25rem;
+            border-bottom-left-radius: 0.25rem;
+        }
+        &__col:last-child &__input, &__col:last-child &__btn {
+            border-top-right-radius: 0.25rem;
+            border-bottom-right-radius: 0.25rem;
+        }
     }
 
     .form--login .form__section {
@@ -1522,8 +1539,8 @@
     .checkbox {
         display: block;
         position: relative;
-        top: 2rem;
-        height: calc(2.5rem + 2px);
+        top: 2.25rem;
+        height: calc(3rem + 2px);
         user-select: none;
         &:hover {
             @media(hover: hover) {
@@ -1551,10 +1568,11 @@
                 position: absolute;
                 left: 0;
                 bottom: 0;
-                padding: 0.75rem;
+                padding: 1rem 0.75rem;
                 width: 100%;
                 border: 1px solid var(--bd);
-                border-radius: 0.25rem;
+                border-top-right-radius: 0.25rem;
+                border-bottom-right-radius: 0.25rem;
             }
         }
         &__input:checked ~ &__mark:after {
@@ -1564,6 +1582,27 @@
 
     .hidden {
         display: none !important;
+    }
+
+    .button {
+        border: none;
+        padding: 1rem 1.25rem;
+        border-radius: 0.25rem;
+        background: var(--bg2);
+        border: 1px solid var(--bd);
+        &:hover {
+            @media(hover: hover) {
+                cursor: pointer;
+                background: var(--bg3);
+            }
+        }
+        &.active {
+            color: var(--blue);
+            border-color: var(--blue);
+            background: var(--darkblue);
+            position: relative;
+            z-index: 2;
+        }
     }
 
     .header {
@@ -1579,13 +1618,22 @@
             display: flex;
             align-items: flex-end;
             justify-content: center;
-            gap: 1rem;
         }
         .button {
             white-space: nowrap;
+            &:not(:last-child) {
+                border-radius: 0;
+                margin-right: -1px;
+            }
+            &:first-child {
+                border-top-left-radius: 0.25rem;
+                border-bottom-left-radius: 0.25rem;
+            }
         }
         .listjs__search {
-            padding: 0.5rem 0.75rem;
+            padding: 1rem 1rem;
+            border-top-right-radius: 0.25rem;
+                border-bottom-right-radius: 0.25rem;
         }
     }
 
@@ -1598,16 +1646,22 @@
         flex-direction: column;
     }
 
+    .sorts, .coin {
+        display: flex;
+        gap: 0.5ch;
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
+        @media (min-width: 640px) {
+            gap: 1ch;
+        }
+    }
+
     .sorts {
         position: sticky;
         top: 0;
         background: var(--bg);
-        padding: 0.75rem 0.25rem;
-        display: flex;
-        gap: 0.5ch;
-        @media (min-width: 640px) {
-            gap: 1ch;
-        }
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
     }
 
     .sort {
@@ -1636,20 +1690,15 @@
         list-style: none;
         display: flex;
         flex-direction: column;
-        border-top: 1px dotted var(--bd);
-        border-bottom: 1px dotted var(--bd);
+        // border-top: 1px solid var(--bd2);
+        // border-bottom: 1px solid var(--bd2);
     }
 
     .coin {
-        padding: 4px 0.25rem;
-        display: flex;
-        border-top: 1px dotted var(--bd);
-        gap: 0.5ch;
+        padding-top: 0.4375rem;
+        padding-bottom: 0.4375rem;
+        border-top: 1px solid var(--bd2);
         order: 0 !important;
-        @media (min-width: 640px) {
-            gap: 1ch;
-        }
-
         &__col {
             flex: 1;
             text-align: right;
@@ -1715,10 +1764,12 @@
                 }
             }
         }
-        &--btc,
-        &--eth {
-            border-top: none;
+        &--btc {
+            // border-top: none;
             order: -2 !important;
+        }
+        &--eth {
+            order: -1 !important;
         }
     }
 
@@ -1745,23 +1796,23 @@
                 margin-left: -0.25rem;
             }
         }
-        &__gain,
-        &__rank {
+        &__rank, 
+        &__bet {
             flex: none;
             min-width: 4ch;
             width: 4ch;
         }
-        &__bet {
-            flex: none;
-            min-width: 5ch;
-            width: 5ch;
-        }
-        &__symbol,
+        &__gain, 
         &__percent,
         &__percent24h {
             flex: none;
             min-width: 5ch;
             width: 5ch;
+        }
+        &__symbol {
+            flex: none;
+            min-width: 6ch;
+            width: 6ch;
         }
         &__now,
         &__old,
@@ -1829,25 +1880,6 @@
                 width: 6ch;
                 min-width: 6ch;
             }
-        }
-    }
-
-    .button {
-        border: none;
-        padding: 0.5rem 0.75rem;
-        border-radius: 0.25rem;
-        background: var(--bg2);
-        border: 1px solid var(--bd);
-        &:hover {
-            @media(hover: hover) {
-                cursor: pointer;
-                background: var(--bg3);
-            }
-        }
-        &.active {
-            color: var(--blue);
-            border-color: var(--midblue);
-            background: var(--darkblue);
         }
     }
 
