@@ -1,11 +1,11 @@
 <script>
-    // import Coins from "./components/Coins.svelte";
-    import Login from "./components/Login.svelte";
+    import Coins from "./components/Coins.svelte";
+    // import Login from "./components/Login.svelte";
 </script>
 
 <template>
     <div class="wrapper" id="listjs">
-        <Login />
+        <Coins />
     </div>
 </template>
 
