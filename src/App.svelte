@@ -1,11 +1,29 @@
 <script>
-    // import Coins from "./components/Coins.svelte";
+    import { onMount } from 'svelte';
+    import axios from "axios";
     import Login from "./components/Login.svelte";
+    import Coins from "./components/Coins.svelte";
+    import { auth, isLogged } from './stores';
+
+    onMount(async () => {
+        if (sessionStorage.getItem("auth")) {
+            $auth = {
+                headers: {
+                    Authorization: `Bearer ${sessionStorage.getItem("auth")}`,
+                },
+            };
+            $isLogged = true;
+        }
+    });
 </script>
 
 <template>
     <div class="wrapper" id="listjs">
-        <Login />
+        {#if $isLogged}
+            <Coins />
+        {:else}
+            <Login />
+        {/if}
     </div>
 </template>
 

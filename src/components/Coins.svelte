@@ -1,7 +1,10 @@
 <script>
-    import Loading from "./Loading.svelte";
+    import { onMount } from 'svelte';
     import axios from "axios";
     import List from "list.js";
+    import Loading from "./Loading.svelte";
+    import { adminUrl, apiUrl, auth } from '../stores';
+    
     import {
         percentChange,
         fixed,
@@ -11,11 +14,12 @@
         computeAmount,
         computeSold,
         smallImg,
-    } from "../js/helpers";
+    } from "../helpers";
 
-    let baseUrl = "https://crypto-svelte.herokuapp.com",
-        apiUrl = "https://api.coingecko.com/api/v3/coins",
-        isLogged = false,
+    let 
+        // adminUrl = "https://crypto-svelte.herokuapp.com",
+        // apiUrl = "https://api.coingecko.com/api/v3/coins",
+        // isLogged = false,
         loginEmail,
         loginPw,
         coins = [],
@@ -60,12 +64,11 @@
         searchCoins = [],
         error = {
             hasError: false,
-        },
-        auth;
+        };
 
     const getAdminDatas = async () => {
         await axios
-            .get(`${baseUrl}/coins`, auth)
+            .get($adminUrl + '/coins', $auth)
             .then((res) => {
                 coins = res.data;
                 for (let coin of coins) {
@@ -74,11 +77,7 @@
 
                 // get coingecko datas
                 axios
-                    .get(
-                        `${apiUrl}/markets?vs_currency=usd&ids=${stats.list.join(
-                            ","
-                        )}`
-                    )
+                    .get($apiUrl + '/markets?vs_currency=usd&ids=' + stats.list.join(","))
                     .then((res) => {
                         datas = res.data;
                         Object.entries(datas).forEach((el) => {
@@ -124,40 +123,40 @@
             });
     };
 
-    const checkIfLogged = async () => {
-        if (sessionStorage.getItem("auth")) {
-            isLogged = true;
-            auth = {
-                headers: {
-                    Authorization: `Bearer ${sessionStorage.getItem("auth")}`,
-                },
-            };
-            await getAdminDatas();
-        }
-    };
+    // const checkIfLogged = async () => {
+    //     if (sessionStorage.getItem("auth")) {
+    //         isLogged = true;
+    //         $auth = {
+    //             headers: {
+    //                 Authorization: `Bearer ${sessionStorage.getItem("auth")}`,
+    //             },
+    //         };
+    //         await getAdminDatas();
+    //     }
+    // };
 
-    const login = async () => {
-        await axios
-            .post(`${baseUrl}/auth/local`, {
-                identifier: loginEmail,
-                password: loginPw,
-            })
-            .then((res) => {
-                loginEmail = "";
-                loginPw = "";
-                sessionStorage.setItem("auth", res.data.jwt);
-                auth = {
-                    headers: {
-                        Authorization: `Bearer ${res.data.jwt}`,
-                    },
-                };
-                isLogged = true;
-                getAdminDatas();
-            })
-            .catch((error) => {
-                console.log("An error occurred:", error.response);
-            });
-    };
+    // const login = async () => {
+    //     await axios
+    //         .post(`${adminUrl}/auth/local`, {
+    //             identifier: loginEmail,
+    //             password: loginPw,
+    //         })
+    //         .then((res) => {
+    //             loginEmail = "";
+    //             loginPw = "";
+    //             sessionStorage.setItem("auth", res.data.jwt);
+    //             auth = {
+    //                 headers: {
+    //                     Authorization: `Bearer ${res.data.jwt}`,
+    //                 },
+    //             };
+    //             isLogged = true;
+    //             getAdminDatas();
+    //         })
+    //         .catch((error) => {
+    //             console.log("An error occurred:", error.response);
+    //         });
+    // };
 
     const setCoinProps = (coin) => {
         stats.list.push(coin.name);
@@ -224,7 +223,7 @@
         existingCoin = false;
         isSearchDatasLoaded = false;
         await axios
-            .get(`${apiUrl}/list`)
+            .get($apiUrl + '/list')
             .then((res) => {
                 let datas = res.data;
                 for (var i = 0; i < datas.length; i++) {
@@ -237,16 +236,14 @@
                     if (stats.list.includes(coin.id)) {
                         existingCoin = true;
                         axios
-                            .get(`${baseUrl}/coins?name_eq=${coin.id}`, auth)
+                            .get($adminUrl + '/coins?name_eq=' + coin.id, $auth)
                             .then(res => {
                                 if (res !== []) {
                                     coin.existing = '☑️';
                                     post.id = res.data[0].id;
 
                                     axios
-                                        .get(
-                                            `${apiUrl}/markets?vs_currency=usd&ids=${coin.id}`
-                                        )
+                                        .get($apiUrl + '/markets?vs_currency=usd&ids=' + coin.id)
                                         .then((res) => {
                                             coin.image = smallImg(res.data[0].image);
                                             coin.marketCapRank = res.data[0].market_cap_rank;
@@ -268,9 +265,7 @@
                 if (!existingCoin) {
                     for (let coin of searchCoins) {
                     axios
-                        .get(
-                            `${apiUrl}/markets?vs_currency=usd&ids=${coin.id}`
-                        )
+                        .get($apiUrl + '/markets?vs_currency=usd&ids=' + coin.id)
                         .then((res) => {
                             coin.image = smallImg(res.data[0].image);
                             coin.marketCapRank = res.data[0].market_cap_rank;
@@ -291,15 +286,14 @@
         datasSending = true;
         let index = coins.indexOf(coin);
         await axios
-            .put(
-                `${baseUrl}/coins/${coin.id}`,
+            .put($adminUrl + '/coins/' + coin.id,
                 {
                     stops: {
                         ...coin.stops,
                         [stopValue]: coin.stops[stopValue] ? false : true,
                     },
                 },
-                auth
+                $auth
             )
             .then((res) => {
                 datasSending = false;
@@ -315,11 +309,11 @@
         datasSending = true;
         if (existingCoin) {
             await axios
-                .get(`${baseUrl}/coins/${post.id}`, auth)
+                .get($adminUrl + '/coins/' + post.id, $auth)
                 .then((res) => {
                     let coin = res.data;
                     axios.put(
-                        `${baseUrl}/coins/${coin.id}`,
+                        $adminUrl + '/coins/' + coin.id,
                         {
                             sold: false,
                             buys: [
@@ -337,7 +331,7 @@
                                 max30: false,
                             },
                         },
-                        auth
+                        $auth
                     )
                     .then((res) => {
                         coin.isAddingBuy = false;
@@ -353,7 +347,7 @@
         } else {
             await axios
                 .post(
-                    `${baseUrl}/coins`,
+                    $adminUrl + '/coins',
                     {
                         name: post.name,
                         symbol: post.symbol,
@@ -372,7 +366,7 @@
                             max30: false,
                         },
                     },
-                    auth
+                    $auth
                 )
                 .then((res) => {
                     isAddingCoin = false;
@@ -411,7 +405,7 @@
 
         await axios
             .put(
-                `${baseUrl}/coins/${coin.id}`,
+                $adminUrl + '/coins/' + coin.id,
                 {
                     sold: computeSold(
                         coin.edit.buysAmount,
@@ -430,7 +424,7 @@
                         },
                     ],
                 },
-                auth
+                $auth
             )
             .then((res) => {
                 // coins = [...coins, res.]
@@ -448,8 +442,7 @@
     const addBuy = async (coin) => {
         datasSending = true;
         await axios
-            .put(
-                `${baseUrl}/coins/${coin.id}`,
+            .put(adminUrl + '/coins/' + coin.id,
                 {
                     sold: false,
                     buys: [
@@ -466,7 +459,7 @@
                         max30: false,
                     },
                 },
-                auth
+                $auth
             )
             .then((res) => {
                 coin.isAddingBuy = false;
@@ -482,7 +475,7 @@
     const getCoinDetails = async (coin) => {
         datasSending = true;
         await axios
-        .get(`${apiUrl}/markets?vs_currency=usd&ids=${coin.name}`)
+        .get($apiUrl + '/markets?vs_currency=usd&ids=' + coin.name)
         .then(res => {
             let data = res.data[0];
             console.log(data)
@@ -502,54 +495,13 @@
         })
     };
 
-    checkIfLogged();
+    onMount(async () => getAdminDatas());
+
 </script>
 
 <template>
-    <!-- IS NOT LOGGED -->
-    {#if !isLogged}
-        <div class="form form--login">
-            <div class="form__section">
-                <div class="form__row">
-                    <div class="form__col col-12">
-                        <label for="login-email" class="form__label">
-                            Email
-                        </label>
-                        <input
-                            id="login-email"
-                            type="email"
-                            class="form__input"
-                            bind:value={loginEmail}
-                        />
-                    </div>
-                    <div class="form__col col-12">
-                        <label for="login-pw" class="form__label">
-                            Password
-                        </label>
-                        <input
-                            id="login-pw"
-                            type="password"
-                            class="form__input"
-                            bind:value={loginPw}
-                        />
-                    </div>
-                </div>
-                <div class="form__row form__row--no-border">
-                    <div class="form__col col-12">
-                        <input
-                            type="submit"
-                            value="Login"
-                            class="form__btn form__submit"
-                            on:click={login}
-                        />
-                    </div>
-                </div>
-            </div>
-        </div>
-    {/if}
-
     <!-- IS LOGGED -->
-    {#if isLogged}
+    <!-- {#if isLogged} -->
         <!-- LOADER -->
         {#if !datasLoaded || datasSending}
             <Loading />
@@ -1387,13 +1339,13 @@
                 </div>
             {/if}
         {/if}
-    {/if}
+    <!-- {/if} -->
 
     <!-- ERRORS -->
-    {#if error.hasError}
+    <!-- {#if error.hasError}
         {error.admin ? error.admin : ""}
         {error.datas ? error.datas : ""}
         {error.update ? error.update : ""}
         {error.post ? error.post : ""}
-    {/if}
+    {/if} -->
 </template>
