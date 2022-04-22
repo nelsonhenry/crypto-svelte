@@ -128,9 +128,17 @@
     .coin,
     .sort {
         &__image {
-            width: 1.25rem;
-            min-width: 1.25rem;
             flex: none;
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 0.25rem;
+            overflow: hidden;
+            margin-right: 1ch;
+            img {
+                height: 100%;
+                object-fit: contain;
+                object-position: 0, 0;
+            }
         }
         &__col {
             span {

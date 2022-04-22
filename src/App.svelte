@@ -19,5 +19,6 @@
         @import "./css/_form";
         @import "./css/_stats";
         @import "./css/_coins";
+        @import "./css/_detail";
     }
 </style>

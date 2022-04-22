@@ -20,6 +20,11 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
+img {
+    display: block;
+    width: 100%;
+}
+
 .main {
     max-width: calc(var(--max-width) + 1rem);
     margin: 0 auto;
