@@ -1,0 +1,181 @@
+
+    .sorts, .coin {
+        display: flex;
+        gap: 0.5ch;
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
+        @media (min-width: 640px) {
+            gap: 1ch;
+        }
+    }
+
+    .sorts {
+        position: sticky;
+        top: 0;
+        background: var(--bg);
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+    }
+
+    .sort {
+        span {
+            &:hover {
+                @media(hover: hover) {
+                    cursor: pointer;
+                        background: var(--bg3);
+                }
+            }
+        }
+        &__col {
+            flex: none;
+            text-align: right;
+            text-transform: uppercase;
+            &.asc,
+            &.desc {
+                span {
+                    background: var(--bg3);
+                }
+            }
+        }
+    }
+
+    .coins {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .coin {
+        padding-top: 0.4375rem;
+        padding-bottom: 0.4375rem;
+        border-top: 1px solid var(--bd2);
+        order: 0 !important;
+        &__col {
+            flex: 1;
+            text-align: right;
+            &.hidden {
+                display: none;
+            }
+            &.collapsed {
+                span.selected {
+                    background: var(--midblue);
+                }
+                span.advised:not(.selected):not(.higher) {
+                    background: var(--bg3);
+                }
+            }
+            span {
+                &.pos {
+                    color: var(--green);
+                    &.tp {
+                        background: var(--darkgreen);
+                    }
+                    &.tp20 {
+                        border-color: var(--midgreen);
+                    }
+                    &.tp30 {
+                        border-color: var(--green);
+                    }
+                }
+                &.neg {
+                    color: var(--red);
+                    &.stop {
+                        background: var(--darkred);
+                    }
+                }
+                &.selected {
+                    color: var(--blue);
+                    background: var(--darkblue);
+                }
+                &.higher {
+                    color: var(--comment);
+                    pointer-events: none;
+                }
+                &.selected.higher {
+                    color: var(--red);
+                    background: var(--darkred);
+                    text-decoration: line-through;
+                    pointer-events: all;
+                }
+                &.advised:not(.selected):not(.higher) {
+                    background: var(--bg2);
+                }
+            }
+        }
+
+        &__stop:not(.higher),
+        &__symbol {
+            span {
+                &:hover {
+                    @media(hover: hover) {
+                        cursor: pointer;
+                        color: var(--fg);
+                        background: var(--bg3);
+                    }
+                }
+            }
+        }
+        &--btc {
+            // border-top: none;
+            order: -2 !important;
+        }
+        &--eth {
+            order: -1 !important;
+        }
+    }
+
+    .coin,
+    .sort {
+        &__image {
+            width: 1.25rem;
+            min-width: 1.25rem;
+            flex: none;
+        }
+        &__col {
+            span {
+                padding: 1px 0.25rem;
+                margin-right: -0.25rem;
+                border-radius: var(--rad);
+                border: 1px solid transparent;
+            }
+        }
+        &__rank,
+        &__symbol {
+            text-align: left;
+            span {
+                margin-right: 0;
+                margin-left: -0.25rem;
+            }
+        }
+        &__rank, 
+        &__bet {
+            flex: none;
+            min-width: 4ch;
+            width: 4ch;
+        }
+        &__gain, 
+        &__percent,
+        &__percent24h {
+            flex: none;
+            min-width: 5ch;
+            width: 5ch;
+        }
+        &__symbol {
+            flex: none;
+            min-width: 6ch;
+            width: 6ch;
+        }
+        &__now,
+        &__old,
+        &__stop {
+            flex: 1;
+            min-width: 6ch;
+            width: 6ch;
+            &.collapsed {
+                width: 2ch;
+                min-width: 2ch;
+                            
+        }
+        }
+    }

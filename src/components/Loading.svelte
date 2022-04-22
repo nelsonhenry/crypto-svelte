@@ -19,10 +19,10 @@
         justify-content: center;
         align-items: center;
         &__text {
-            padding: 0.5rem 0.75rem;
+            padding: 1rem 1.5rem;
             background: var(--bg);
             border: 1px solid var(--bd);
-            border-radius: 0.25rem;
+            border-radius: var(--rad);
             text-align: center;
         }
 

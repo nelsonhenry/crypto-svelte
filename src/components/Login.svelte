@@ -1,21 +1,19 @@
 <script>
     import axios from "axios";
+    import { adminUrl, loginToken } from '../stores.js'
 
-    let baseUrl = "https://crypto-svelte.herokuapp.com",
-        loginEmail,
-        loginPw,
-        loginToken;
+    let loginEmail, loginPw;
 
     const login = async () => {
         await axios
-            .post(`${baseUrl}/auth/local`, {
+            .post($adminUrl + '/auth/local', {
                 identifier: loginEmail,
                 password: loginPw,
             })
             .then((res) => {
                 loginEmail = "";
                 loginPw = "";
-                loginToken = res.data.jwt;
+                loginToken.set(res.data.jwt);
             })
             .catch((error) => {
                 console.log("An error occurred:", error.response);

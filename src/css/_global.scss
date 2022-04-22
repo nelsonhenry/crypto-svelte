@@ -1,0 +1,55 @@
+html {
+    font-size: 11px;
+    @media (min-width: 768px) {
+        font-size: 14px;
+    }
+    // @media (min-width: 1280px) {
+    //     font-size: 16px;
+    // }
+    // @media (min-width: 1440px) {
+    //     font-size: 18px;
+    // }
+}
+
+body {
+    font-family: "Roboto Mono", "Fira Code", monospace;
+    line-height: 1.25;
+    color: var(--fg);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.main {
+    max-width: calc(var(--max-width) + 1rem);
+    margin: 0 auto;
+    margin-bottom: 5rem;
+    padding: 1rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.button {
+    border: none;
+    padding: 1rem 1.25rem;
+    border-radius: var(--rad);
+    background: var(--bg2);
+    border: 1px solid var(--bd);
+    &:hover {
+        @media(hover: hover) {
+            cursor: pointer;
+            background: var(--bg3);
+        }
+    }
+    &.active {
+        color: var(--blue);
+        border-color: var(--blue);
+        background: var(--darkblue);
+        position: relative;
+        z-index: 2;
+    }
+}

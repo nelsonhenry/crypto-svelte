@@ -1,0 +1,218 @@
+.form {
+    position: fixed;
+    z-index: 11;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    overflow-y: auto;
+    background: var(--bg);
+    display: flex;
+    &__section {
+        width: 100%;
+        margin: auto;
+        max-width: calc(var(--max-width) + 2rem);
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 3rem 1.5rem;
+    }
+    &__row {
+        // background: var(--bg2);
+        // padding: 1.5rem;
+        // border-radius: var(--rad);
+        // border: 1px solid var(--bg3);
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 1.5rem 0;
+        &--no-border {
+            padding: 0;
+            border-radius: 0;
+            background: none;
+            border: none;
+        }
+    }
+    &__label {
+        display: block;
+        font-size: 0.75rem;
+        line-height: 1.25rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--comment);
+        margin-bottom: 0.5rem;
+    }
+    &__input {
+        width: 100%;
+        border: 1px solid var(--bd);
+        padding: 1rem 0.75rem;
+        background: var(--bg);
+        &:focus {
+            outline: none;
+            border: 1px solid var(--bd);
+            background: var(--bg2);
+        }
+    }
+    &__btn {
+        width: 100%;
+        padding: 1rem;
+        border: 1px solid var(--bd);
+        &:hover {
+            @media(hover: hover) {
+                cursor: pointer;
+                background: var(--bg3);
+            }
+        }
+    }
+    &__input, &__btn, &__btn--inline {
+        height: calc(1rem + 1.25rem + 1rem + 2px);
+    }
+    &__btn--inline {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: auto;
+        padding: 1rem 0.75rem;
+        font-size: 0.875rem;
+        line-height: 1.25rem;
+        border: none;
+        // background: var(--bg3);
+        background: none;
+        &:hover {
+            @media(hover: hover) {
+                background: none;
+            }
+        }
+    }
+    &__submit {
+        background: var(--bg2);
+    }
+}
+
+.form--add-coin, .form--add-buy, .form--edit-coin {
+    .form__col:not(:last-child) {
+        background: transparent;
+        .form__input, .form__btn {
+            border-right: none;
+        }
+    }
+    .form__col:first-child {
+        .form__input, .form__btn {
+            border-top-left-radius: var(--rad);
+            border-bottom-left-radius: var(--rad);
+        }
+    }
+    .form__col:last-child {
+        .form__input, .form__btn {
+            border-top-right-radius: var(--rad);
+            border-bottom-right-radius: var(--rad);
+        }
+    }
+}
+
+.form--login {
+    .form__input, .form__btn {
+        border-radius: var(--rad);
+    }
+    .form__section {
+        max-width: calc(400px + 2rem);
+    }
+} 
+
+.checkbox {
+    display: block;
+    position: relative;
+    top: 2rem;
+    height: calc(3rem + 2px);
+    user-select: none;
+    &:hover {
+        @media(hover: hover) {
+            cursor: pointer;
+        }
+    }
+    &__label {
+        position: absolute;
+        top: -2rem;
+        left: 0;
+    }
+    &__input {
+        position: absolute;
+        opacity: 0;
+        height: 0;
+        width: 0;
+    }
+    &__mark {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        &:after {
+            content: "No";
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            padding: 1rem 0.75rem;
+            width: 100%;
+            border: 1px solid var(--bd);
+            border-top-right-radius: var(--rad);
+            border-bottom-right-radius: var(--rad);
+        }
+    }
+    &__input:checked ~ &__mark:after {
+        content: "Yes";
+    }
+}
+
+.search-coins {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+
+    .search-coin {
+        padding: 0.75rem 0;
+        display: flex;
+        gap: 0.5ch;
+        order: 0 !important;
+        &:not(:last-child) {
+            border-bottom: 1px dotted var(--bd);
+        }
+        @media (min-width: 640px) {
+            gap: 1ch;
+        }
+
+        &:hover {
+            @media(hover: hover) {
+                cursor: pointer;
+                color: var(--comment);
+            }
+        }
+
+        &__image {
+            width: 1.25rem;
+            min-width: 1.25rem;
+            flex: none;
+            height: 1.25rem;
+            img {
+                height: 100%;
+            }
+        }
+
+        &__existing {
+            flex: none;
+            width: 2ch;
+            min-width: 2ch;
+        }
+
+        &__rank {
+            flex: none;
+            width: 5ch;
+            min-width: 5ch;
+        }
+
+        &__symbol {
+            flex: none;
+            width: 6ch;
+            min-width: 6ch;
+        }
+    }
+}

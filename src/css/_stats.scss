@@ -1,0 +1,26 @@
+.stats {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 0.25rem;
+    & + & {
+        margin-top: 0.5rem;
+    }
+    &__col {
+        white-space: nowrap;
+        span {
+            padding: 1px 0.25rem;
+            margin-right: -0.25rem;
+            border-radius: var(--rad);
+            border: 1px solid transparent;
+            &.pos {
+                color: var(--green);
+                background: var(--darkgreen);
+            }
+            &.neg {
+                color: var(--red);
+                background: var(--darkred);
+            }
+        }
+    }
+}

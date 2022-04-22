@@ -1,5 +1,5 @@
-@import "../styles/_include-media";
-$breakpoints: ( xxs: 320px, xs: 480px, sm: 768px, md: 1024px, lg: 1280px, xl: 1440px, xxl: 1920px);
+@import "_include-media";
+$breakpoints: (xxs: 320px, xs: 480px, sm: 768px, md: 1024px, lg: 1280px, xl: 1440px, xxl: 1920px);
 :root {
     --salmon: #e0a080;
     --max-width: 600px;
@@ -41,6 +41,13 @@ $breakpoints: ( xxs: 320px, xs: 480px, sm: 768px, md: 1024px, lg: 1280px, xl: 14
     // --red-trans: #9b288930;
     // --blue-trans: #1565c030;
     // --green-trans: #00897b30;
+    // --bg: #101010;
+    // --bg-trans: #00000080;
+    // --bg2: #202020;
+    // --bg3: #333;
+    // --bd: #666;
+    // --bd2: #333;
+    --rad: 0.25rem;
 }
 
 @font-face {
