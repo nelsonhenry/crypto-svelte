@@ -3,7 +3,8 @@
     import axios from "axios";
     import Login from "./components/Login.svelte";
     import Coins from "./components/Coins.svelte";
-    import { auth, isLogged } from './stores';
+    import Loading from "./components/Loading.svelte";
+    import { auth, isLogged, isLoading } from './stores';
 
     onMount(async () => {
         if (sessionStorage.getItem("auth")) {

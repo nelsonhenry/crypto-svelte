@@ -1,6 +1,6 @@
 <script>
     import axios from "axios";
-    import { adminUrl, isLogged, auth } from '../stores.js'
+    import { adminUrl, isLogged, auth, isLoading } from '../stores.js'
 
     let loginEmail, loginPw;
 
