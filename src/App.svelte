@@ -1,6 +1,5 @@
 <script>
     import { onMount } from 'svelte';
-    import axios from "axios";
     import Login from "./components/Login.svelte";
     import Coins from "./components/Coins.svelte";
     import Loading from "./components/Loading.svelte";
@@ -19,11 +18,14 @@
 </script>
 
 <template>
-    <div class="wrapper" id="listjs">
+    <div class="wrapper">
         {#if $isLogged}
             <Coins />
         {:else}
             <Login />
+        {/if}
+        {#if $isLoading}
+            <Loading />
         {/if}
     </div>
 </template>
