@@ -1,6 +1,6 @@
 <script>
     import axios from "axios";
-    import { adminUrl, loginToken } from '../stores.js'
+    import { adminUrl, isLogged, auth, isLoading } from '../stores.js'
 
     let loginEmail, loginPw;
 
@@ -13,7 +13,13 @@
             .then((res) => {
                 loginEmail = "";
                 loginPw = "";
-                loginToken.set(res.data.jwt);
+                sessionStorage.setItem("auth", res.data.jwt);
+                $isLogged = true;
+                $auth = {
+                    headers: {
+                        Authorization: `Bearer ${res.data.jwt}`,
+                    },
+                };
             })
             .catch((error) => {
                 console.log("An error occurred:", error.response);

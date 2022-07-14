@@ -1,12 +1,33 @@
 <script>
+    import { onMount } from 'svelte';
+    import Login from "./components/Login.svelte";
     import Coins from "./components/Coins.svelte";
-    // import Login from "./components/Login.svelte";
+    import Loading from "./components/Loading.svelte";
+    import { auth, isLogged, isLoading } from './stores';
+
+    onMount(async () => {
+        if (sessionStorage.getItem("auth")) {
+            $auth = {
+                headers: {
+                    Authorization: `Bearer ${sessionStorage.getItem("auth")}`,
+                },
+            };
+            $isLogged = true;
+        }
+    });
 </script>
 
 <template>
-    <div class="wrapper" id="listjs">
-        <Coins />
-    </div>
+    <div class="wrapper">
+        {#if $isLogged}
+            <Coins />
+        {:else}
+            <Login />
+        {/if}
+        {#if $isLoading}
+            <Loading />
+        {/if}
+template    </div>
 </template>
 
 <style lang="scss" global>
